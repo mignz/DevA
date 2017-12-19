@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# DevA - Web Development Environment
+# Created by Miguel Nunes
+# https://github.com/mignz/DevA
+
+# ------------------------------------------------------------------------------
+
+# Fix permissions
+
+# shellcheck disable=SC2154
+if [ "$os" == "macos" ]; then
+    sudo chown -R "$(whoami)":staff "$(cat "$path_etc/nginx/deva/deva_www")"
+    sudo chown -R "$(whoami)":admin /usr/local/DevA
+    sudo chown -R "$(whoami)":admin /usr/local/etc/nginx
+else
+    sudo chown -R "$(whoami)":"$(whoami)" "$(cat "$path_etc/nginx/deva/deva_www")"
+    sudo chown -R "$(whoami)":"$(whoami)" /usr/local/DevA
+    sudo chown -R root:root /etc/nginx
+fi

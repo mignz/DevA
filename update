@@ -1,0 +1,232 @@
+#!/bin/bash
+
+# DevA - Web Development Environment
+# Created by Miguel Nunes
+# https://github.com/mignz/DevA
+
+# ------------------------------------------------------------------------------
+
+# Text colors
+
+function red {
+    echo -e "\033[91m$1\033[39m"
+}
+
+function green {
+    echo -e "\033[92m$1\033[39m"
+}
+
+# ------------------------------------------------------------------------------
+
+# Detect OS
+
+case "$(uname -s)" in
+    Linux*) os=linux;;
+    Darwin*) os=macos;;
+    *) red "Invalid operating system! Only macOS and Ubuntu supported."; exit 1;;
+esac
+
+# ------------------------------------------------------------------------------
+
+# Paths & OS specific configuration
+
+if [ "$os" == "macos" ]; then
+    path_php=/usr/local/etc/php/7.1
+else
+    path_php=/etc/php/7.1/fpm
+fi
+
+# ------------------------------------------------------------------------------
+
+# Preflight Checks
+
+if [ ! "$EUID" -ne 0 ]; then
+    red "Plese do NOT run as admin!"
+    exit 1
+fi
+
+if [ ! -f /usr/local/etc/nginx/deva.conf ]; then
+    red "DevA not installed!"
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
+
+# Helpers
+
+function currentVersion {
+    grep "this_update=" /usr/local/DevA/deva | cut -d "=" -f 2
+}
+
+function get {
+    data=$(curl -SsL "https://raw.githubusercontent.com/mignz/DevA/master/$1")
+    if [ $# -eq 1 ]; then
+        echo "$data"
+    else
+        echo "Fetching $1 from Git repository ..."
+        echo "$data" | sudo tee "$2"
+    fi
+}
+
+function perms {
+    if [ "$os" == "macos" ]; then
+        sudo chown -R "$(whoami)":admin /usr/local/DevA
+        sudo chown -R "$(whoami)":admin /usr/local/etc/nginx
+    else
+        sudo chown -R "$(whoami)":"$(whoami)" /usr/local/DevA
+        sudo chown -R root:root /etc/nginx
+    fi
+}
+
+function updateDevaScript {
+    get "deva" "/usr/local/DevA/deva"
+}
+
+function rep {
+    if [ $os == "macos" ]; then
+        sudo sed -i '' "s@$1@$2@g" "$3"
+    else
+        sudo sed -i "s@$1@$2@g" "$3"
+    fi
+}
+
+# ------------------------------------------------------------------------------
+
+# Updates
+
+function __1 {
+    updateDevaScript &
+    get "conf/deva_php-fpm.conf" "/usr/local/etc/php/7.1/deva_php-fpm.conf" &
+    wait
+    echo "include=/usr/local/etc/php/7.1/deva_php-fpm.conf" > /usr/local/etc/php/7.1/php-fpm.conf
+    brew services restart php71
+    brew services start mongodb
+    /usr/local/bin/mongo admin --eval "db.createUser({user:'root',pwd:'root',roles:['root']})"
+    echo -e "security:\n  authorization: enabled" >> "/usr/local/etc/mongod.conf"
+    brew services stop mongodb
+}
+
+function __2 {
+    updateDevaScript &
+    get "conf/deva_404.html" "/usr/local/etc/nginx/deva_404.html" &
+    get "conf/deva_phalcon.conf" "/usr/local/etc/nginx/deva_phalcon.conf" &
+    get "conf/deva_php.conf" "/usr/local/etc/nginx/deva_php.conf" &
+    wait
+    sudo brew services restart nginx
+}
+
+function __3 {
+    updateDevaScript
+}
+
+function __4 {
+    updateDevaScript
+    rep 'allow_url_fopen = On' 'allow_url_fopen = Off' /usr/local/etc/php/7.1/php.ini
+    brew install pandoc
+}
+
+function __5 {
+    updateDevaScript &
+    get "conf/deva.conf" "/usr/local/etc/nginx/deva.conf" &
+    get "conf/deva_common.conf" "/usr/local/etc/nginx/deva_common.conf" &
+    get "conf/deva_html.conf" "/usr/local/etc/nginx/deva_html.conf" &
+    get "conf/deva_phalcon.conf" "/usr/local/etc/nginx/deva_phalcon.conf" &
+    get "conf/deva_php.conf" "/usr/local/etc/nginx/deva_php.conf" &
+    get "conf/deva_404.html" "/usr/local/etc/nginx/deva_404.html" &
+    get "conf/deva_php-fpm.conf" "/usr/local/etc/php/7.1/deva_php-fpm.conf" &
+    wait
+    rep "USER_PLACEHOLDER" "$(whoami)" /usr/local/etc/nginx/deva.conf
+    if [ -f /usr/local/etc/nginx/servers/___localhost.conf ]; then
+        get "conf/localhost.conf" "/usr/local/etc/nginx/servers/___localhost.conf"
+        rep "WWWDIR_PLACEHOLDER" "$(cat /usr/local/etc/nginx/deva_www)" /usr/local/etc/nginx/servers/___localhost.conf
+    else
+        get "conf/localhost.conf" "/usr/local/etc/nginx/servers/localhost.conf"
+        rep "WWWDIR_PLACEHOLDER" "$(cat /usr/local/etc/nginx/deva_www)" /usr/local/etc/nginx/servers/localhost.conf
+    fi
+    rep 'disable_functions =' 'disable_functions = exec,shell_exec,pcntl_exec,passthru,system,proc_open,proc_close,proc_terminate,proc_nice,popen,pclose,curl_multi_exec,parse_ini_file,ini_get_all,ini_restore,show_source,eval,assert,dl,apache_note,apache_setenv,closelog,debugger_off,debugger_on,define_syslog_variables,openlog,proc_get_status,syslog,url_exec,stream_select,inject_code,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,posix_kill,posix_mkfifo,posix_setpgid,posix_setsid,posix_setuid,posix_uname,xmlrpc_entity_decode,pcntl_alarm,pcntl_fork,pcntl_waitpid,pcntl_wait,pcntl_wifexited,pcntl_wifstopped,pcntl_wifsignaled,pcntl_wexitstatus,pcntl_wtermsig,pcntl_wstopsig,pcntl_signal,pcntl_signal_dispatch,pcntl_get_last_error,pcntl_strerror,pcntl_sigprocmask,pcntl_sigwaitinfo,pcntl_sigtimedwait,pcntl_getpriority,pcntl_setpriority,opcache_get_status' /usr/local/etc/php/7.1/php.ini
+    rm -f /usr/local/bin/deva
+}
+
+function __6 {
+    updateDevaScript
+    get "conf/deva_404.html" "/usr/local/etc/nginx/deva_404.html"
+    rep 'shell_exec,' '' /usr/local/etc/php/7.1/php.ini
+    rep 'passthru,' '' /usr/local/etc/php/7.1/php.ini
+    rep 'stream_select,' '' /usr/local/etc/php/7.1/php.ini
+}
+
+function __7 {
+    updateDevaScript
+    rep 'allow_url_fopen = Off' 'allow_url_fopen = On' "$path_php/php.ini"
+}
+
+function __8 {
+    sudo mkdir -p /usr/local/DevA/scripts
+    get "deva/deva" "/usr/local/DevA/deva" --sudo
+    get "deva/scripts/backup" "/usr/local/DevA/scripts/backup" --sudo
+    get "deva/scripts/changelog" "/usr/local/DevA/scripts/changelog" --sudo
+    get "deva/scripts/doctor" "/usr/local/DevA/scripts/doctor" --sudo
+    get "deva/scripts/hosts" "/usr/local/DevA/scripts/hosts" --sudo
+    get "deva/scripts/hosts_add" "/usr/local/DevA/scripts/hosts_add" --sudo
+    get "deva/scripts/hosts_default" "/usr/local/DevA/scripts/hosts_default" --sudo
+    get "deva/scripts/hosts_edit" "/usr/local/DevA/scripts/hosts_edit" --sudo
+    get "deva/scripts/hosts_remove" "/usr/local/DevA/scripts/hosts_remove" --sudo
+    get "deva/scripts/permissions" "/usr/local/DevA/scripts/permissions" --sudo
+    get "deva/scripts/phpinfo" "/usr/local/DevA/scripts/phpinfo" --sudo
+    get "deva/scripts/restore" "/usr/local/DevA/scripts/restore" --sudo
+    get "deva/scripts/services" "/usr/local/DevA/scripts/services" --sudo
+    get "deva/scripts/updates" "/usr/local/DevA/scripts/updates" --sudo
+    sudo mkdir -p /usr/local/etc/nginx/deva/vhosts
+    sudo mv /usr/local/etc/nginx/deva_www /usr/local/etc/nginx/deva/deva_www
+    sudo rm -rf /usr/local/etc/nginx/deva*
+    sudo mv /usr/local/etc/nginx/servers/* /usr/local/etc/nginx/deva/vhosts/*
+    sudo rm -rf /usr/local/etc/nginx/servers
+    get "conf/nginx/deva.conf" "/usr/local/etc/nginx/deva/deva.conf" --sudo
+    get "conf/nginx/deva.tpl" "/usr/local/etc/nginx/deva/deva.tpl" --sudo
+    get "conf/nginx/deva_404.html" "/usr/local/etc/nginx/deva/deva_404.html" --sudo
+    get "conf/nginx/deva_common.conf" "/usr/local/etc/nginx/deva/deva_common.conf" --sudo
+    get "conf/nginx/deva_html.conf" "/usr/local/etc/nginx/deva/deva_html.conf" --sudo
+    get "conf/nginx/deva_phalcon.conf" "/usr/local/etc/nginx/deva/deva_phalcon.conf" --sudo
+    get "conf/nginx/deva_php.conf" "/usr/local/etc/nginx/deva/deva_php.conf" --sudo
+    for f in /usr/local/etc/nginx/deva/vhosts/*.conf
+    do
+        rep 'include deva_' 'include deva/deva_' "$f"
+    done
+    mysqldump -uroot --all-databases > ~/deva_update_mysql_temp.sql
+    brew uninstall mariadb
+    brew install mysql
+    brew services start mysql
+    mysql -uroot < ~/deva_update_mysql_temp.sql
+    rm ~/deva_update_mysql_temp.sql
+}
+
+# ------------------------------------------------------------------------------
+
+# Run Updater
+
+lv=$(get "update.txt")
+cv=$(currentVersion)
+
+if [ "$cv" -eq "$lv" ]; then
+    green "You already have the latest version!"
+    rm -f "$0"
+    exit 0
+fi
+
+clear
+echo -e "This will update DevA from Update $cv to Update $lv.\n\nPress ENTER to continue ..."
+read -r
+
+for ((i=cv+1; i < lv + 1; i++))
+do
+    echo "Running Update $i ..."
+    __${i}
+    perms
+done
+
+clear
+green "Update complete!"
+
+rm -f "$0"
+
+exit 0

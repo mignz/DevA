@@ -1,0 +1,122 @@
+#!/bin/bash
+
+# DevA - Web Development Environment
+# Created by Miguel Nunes
+# https://github.com/mignz/DevA
+
+# ------------------------------------------------------------------------------
+
+# Prompt Host
+
+vhost=$(dialog --clear \
+    --title "Virtual Host Name" \
+    --backtitle "DevA > Virtual Hosts > Add Virtual Host" \
+    --inputbox "Choose a name for the virtual host. Remember that .dev is appended to the host name if you don't specify it now." \
+    9 70 \
+    "" \
+    3>&1 1>&2 2>&3 3>&-)
+if [ $? -eq 1 ] || [[ "$vhost" =~ [^a-zA-Z0-9._-] ]] || [[ $vhost == '' ]] || [[ "$vhost" == ___* ]]; then
+    clear
+    red "Invalid virtual host name! DevA can't use: \"$vhost\".\nPress any key to continue ..."
+    wait_keypress
+    # shellcheck disable=SC2105
+    continue
+fi
+
+# ------------------------------------------------------------------------------
+
+# Check if exists
+
+# shellcheck disable=SC2154
+if [ -f "$path_etc/nginx/deva/vhosts/$hostname.dev.conf" ]; then
+    clear
+    red "The virtual host $hostname.dev already exists! Press any key to continue ..."
+    wait_keypress
+    # shellcheck disable=SC2105
+    continue
+fi
+
+# ------------------------------------------------------------------------------
+
+# Prompt Website Type
+
+options=(1 "Typical PHP Website"
+         2 "Phalcon Powered Website"
+         3 "HTML website with rewriting (E.g. React)")
+choice=$(dialog --clear \
+    --title "Website Type" \
+    --backtitle "DevA > Virtual Hosts > Add Virtual Host" \
+    --keep-tite \
+    --menu "There's no .htaccess files in Nginx so we need to pre-configure the virtual host to enable rewriting with the correct settings for your website. Use the arrow keys on your keyboard to choose one and press ENTER:" \
+    13 60 3 \
+    "${options[@]}" \
+    2>&1 >/dev/tty)
+# shellcheck disable=SC2105
+[ $? -eq 1 ] && continue
+case $choice in
+    1) app=php;;
+    2) app=phalcon;;
+    3) app=html;;
+esac
+
+# ------------------------------------------------------------------------------
+
+# Add .dev if necessary
+
+hostname=${vhost%.dev}
+hostname=$hostname.dev
+
+# ------------------------------------------------------------------------------
+
+# Prompt and create website path
+
+sitepath=$(dialog --clear \
+    --title "Path Selection" \
+    --backtitle "DevA > Virtual Hosts > Add Virtual Host" \
+    --inputbox "Specify the full path of the public directory to this website." \
+    8 70 \
+    "$(cat "$path_etc/nginx/deva/deva_www")/${hostname%.dev}" \
+    3>&1 1>&2 2>&3 3>&-)
+if [ $? -eq 1 ]; then
+    # shellcheck disable=SC2105
+    continue
+fi
+mkdir -p "$sitepath" > /dev/null 2>&1
+if [ ! -d "$sitepath" ] || ( echo "$sitepath" | grep -q ' ' ); then
+    red "Invalid directory entered! Make sure that you have the correct permissions.\n\nPress any key to continue ..."
+    wait_keypress
+    # shellcheck disable=SC2105
+    continue
+fi
+
+# ------------------------------------------------------------------------------
+
+# Make Nginx changes
+
+clear
+echo "Adding virtual host, please wait ..."
+sudo cp "$path_etc/nginx/deva/deva.tpl" "$path_etc/nginx/deva/vhosts/$hostname.conf"
+replace "PLACEHOLDER_DATE" "$(date)" "$path_etc/nginx/deva/vhosts/$hostname.conf"
+replace "PLACEHOLDER_NAME" "$hostname" "$path_etc/nginx/deva/vhosts/$hostname.conf"
+replace "PLACEHOLDER_ROOT" "$sitepath" "$path_etc/nginx/deva/vhosts/$hostname.conf"
+replace "PLACEHOLDER_REWRITE" "$app" "$path_etc/nginx/deva/vhosts/$hostname.conf"
+
+# ------------------------------------------------------------------------------
+
+# Add virtual host to hosts file
+
+if ! grep -q "$hostname" "/etc/hosts"; then
+    echo -e "127.0.0.1\t$hostname" | sudo tee -a /etc/hosts
+fi
+
+# ------------------------------------------------------------------------------
+
+# Reload Nginx
+
+# shellcheck disable=SC2154
+if [ "$os" == "macos" ]; then
+    sudo chown -R "$(whoami)":admin "$path_etc/nginx/deva"
+    sudo brew services restart nginx
+else
+    sudo service nginx reload
+fi

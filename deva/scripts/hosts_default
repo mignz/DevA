@@ -1,0 +1,73 @@
+#!/bin/bash
+
+# DevA - Web Development Environment
+# Created by Miguel Nunes
+# https://github.com/mignz/DevA
+
+# ------------------------------------------------------------------------------
+
+# Get virtual hosts
+
+vhosts=()
+# shellcheck disable=SC2154
+for f in $path_etc/nginx/deva/vhosts/*.conf
+do
+    host="$(basename "$f" .conf)"
+    if [[ "$host" == ___* ]]; then
+        continue
+    fi
+    vhosts+=($host)
+done
+if [ "${#vhosts[@]}" -lt 1 ]; then
+    red "No virtual hosts to remove! Press any key to continue ..."
+    wait_keypress
+    # shellcheck disable=SC2105
+    continue
+fi
+
+# ------------------------------------------------------------------------------
+
+# Prompt virtual host selection
+
+i=0
+options=()
+for host in "${vhosts[@]}"
+do
+    ((i++))
+    options+=($i "$host")
+done
+choice=$(dialog --clear \
+    --title "Select Virtual Host" \
+    --backtitle "DevA > Virtual Hosts > Default Virtual Host" \
+    --keep-tite \
+    --menu "Which virtual host do you wish to default?" \
+    16 46 10 \
+    "${options[@]}" \
+    2>&1 >/dev/tty)
+# shellcheck disable=SC2105
+[ $? -eq 1 ] && continue
+((choice--))
+vhost=${vhosts[$choice]}
+
+# ------------------------------------------------------------------------------
+
+# Remove virtual host
+
+if [ ! -f "$path_etc/nginx/deva/vhosts/$vhost.conf" ]; then
+    error "Virtual host not found! Press any key to continue ..."
+else
+    find "$path_etc/nginx/deva/vhosts" -type f -name '___*' | while read -r f; do sudo mv "$f" "${f/___/}"; done
+    sudo mv "$path_etc/nginx/deva/vhosts/$vhost.conf" "$path_etc/nginx/deva/vhosts/___$vhost.conf"
+    # shellcheck disable=SC2154
+    if [ "$os" == "macos" ]; then
+        sudo chown -R "$(whoami)":admin "$path_etc/nginx/deva"
+        sudo brew services restart nginx
+    else
+        sudo service nginx reload
+    fi
+    dialog --clear \
+        --title "Default Host Set" \
+        --backtitle "DevA > Virtual Hosts > Default Virtual Host" \
+        --msgbox "The default host is set!\n\nYou can now open http://$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1') in another device to see this website." \
+        8 70
+fi

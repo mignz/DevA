@@ -1,0 +1,116 @@
+#!/bin/bash
+
+# DevA - Web Development Environment
+# Created by Miguel Nunes
+# https://github.com/mignz/DevA
+
+# ------------------------------------------------------------------------------
+
+# Prompt backup location
+
+backuploc=$(dialog --clear \
+    --title "Backup Location" \
+    --backtitle "DevA > Restore" \
+    --inputbox "Where is the .tar backup file located?\n\nWhat will be restored:\n- Website files\n- MySQL databases\n- Nginx host files\n- Hosts file entries" \
+    14 70 \
+    ~/ \
+    3>&1 1>&2 2>&3 3>&-)
+# shellcheck disable=SC2105
+[ $? -eq 1 ] && continue
+clear
+# shellcheck disable=SC2154
+if [ "$(ls -A "$(cat "$path_etc/nginx/deva/deva_www")")" ]; then
+    red "The websites directory is not empty! It must be for the restore process to\ncomplete. Make sure there are no hidden files.\n\nDirectory: $(cat "$path_etc/nginx/deva/deva_www")\n\nPress any key to continue ..."
+    wait_keypress
+    # shellcheck disable=SC2105
+    continue
+fi
+if [ ! -f "$backuploc" ]; then
+    red "Backup file not found! Press any key to continue ..."
+    wait_keypress
+    # shellcheck disable=SC2105
+    continue
+fi
+
+# ------------------------------------------------------------------------------
+
+# Prepare
+
+yellow "Starting restore ..."
+# shellcheck disable=SC2154
+if [ "$os" == "macos" ]; then
+    brew services start mysql
+    brew services stop mongodb
+    path_mongodata=/usr/local/var/mongodb
+else
+    sudo service mysql start
+    sudo service mongodb stop
+    path_mongodata=/var/lib/mongodb
+fi
+randomid=$(randstring)
+mkdir ~/"$randomid"
+tar -xf "$backuploc" -C ~/"$randomid"
+if [ ! -f ~/"$randomid"/deva_backup_token.txt ]; then
+    rm -rf ~/"$randomid"
+    red "Invalid backup file! Press any key to continue ..."
+    wait_keypress
+    # shellcheck disable=SC2105
+    continue
+fi
+
+# ------------------------------------------------------------------------------
+
+# Restore files
+
+sudo rm -rf "$path_etc/nginx/deva/vhosts/*.conf" $path_mongodata/*
+sudo tar -zxf ~/"$randomid"/deva_backup_mysql.tar.gz -C ~/"$randomid" &
+sudo tar -zxf ~/"$randomid"/deva_backup_mongodb.tar.gz -C $path_mongodata &
+sudo tar -zxf ~/"$randomid"/deva_backup_websites.tar.gz -C "$(cat "$path_etc/nginx/deva/deva_www")" &
+sudo tar -zxf ~/"$randomid"/deva_backup_nginx.tar.gz -C "$path_etc/nginx/deva/vhosts" &
+wait
+
+# ------------------------------------------------------------------------------
+
+# Restore MySQL databases
+
+mysql -uroot < ~/"$randomid"/deva_backup_mysql.sql
+
+# ------------------------------------------------------------------------------
+
+# Fix permissions and restart Nginx
+
+if [ "$os" == "macos" ]; then
+    sudo chown -R "$(whoami)":admin /usr/local/var/mongodb "$path_etc/nginx/deva/vhosts"
+    sudo chown -R "$(whoami)":staff "$(cat "$path_etc/nginx/deva/deva_www")"
+    sudo brew services restart nginx
+else
+    sudo service nginx restart
+fi
+
+# ------------------------------------------------------------------------------
+
+# Remove temporary files
+
+rm -rf ~/"$randomid"
+
+# ------------------------------------------------------------------------------
+
+# Add hosts to hosts file
+
+for f in $path_etc/nginx/deva/vhosts/*
+do
+    vhostname="$(basename "${f/___/}" .conf)"
+    if ! grep -q "$vhostname" "/etc/hosts"; then
+        echo -e "127.0.0.1\t$vhostname" | sudo tee -a /etc/hosts
+    fi
+done
+
+# ------------------------------------------------------------------------------
+
+# Show finish message
+
+dialog --clear \
+    --title "Complete!" \
+    --backtitle "DevA > Restore" \
+    --msgbox "Restore process complete!\nMake sure that all website files are present in the directory:\n\n> $(cat "$path_etc/nginx/deva/deva_www")\n\nAnd that all databases are present. Also, you should now be able to open previous virtual hosts in your browser without having to modify the system hosts file." \
+    12 75

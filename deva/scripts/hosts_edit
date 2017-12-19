@@ -1,0 +1,104 @@
+#!/bin/bash
+
+# DevA - Web Development Environment
+# Created by Miguel Nunes
+# https://github.com/mignz/DevA
+
+# ------------------------------------------------------------------------------
+
+# Get virtual hosts
+
+vhosts=()
+# shellcheck disable=SC2154
+for f in $path_etc/nginx/deva/vhosts/*.conf
+do
+    host="$(basename "$f" .conf)"
+    host=${host/___/}
+    if [ "$host" == "localhost" ]; then
+        continue
+    fi
+    vhosts+=($host)
+done
+if [ "${#vhosts[@]}" -lt 1 ]; then
+    red "No valid virtual hosts available to edit! Press any key to continue ..."
+    wait_keypress
+    # shellcheck disable=SC2105
+    continue
+fi
+
+# ------------------------------------------------------------------------------
+
+# Prompt virtual host selection
+
+i=0
+options=()
+for host in "${vhosts[@]}"
+do
+    ((i++))
+    options+=($i "$host")
+done
+choice=$(dialog --clear \
+    --title "Select Virtual Host" \
+    --backtitle "DevA > Virtual Hosts > Edit Virtual Host" \
+    --keep-tite \
+    --menu "Which virtual host do you wish to edit?\nThis will open the virtual host file with nano." \
+    16 51 10 \
+    "${options[@]}" \
+    2>&1 >/dev/tty)
+# shellcheck disable=SC2105
+[ $? -eq 1 ] && continue
+((choice--))
+vhost=${vhosts[$choice]}
+
+# ------------------------------------------------------------------------------
+
+# Edit virtual host
+
+if [ ! -f "$path_etc/nginx/deva/vhosts/$vhost.conf" ]; then
+    error "Virtual host not found! Press any key to continue ..."
+else
+    sudo cp "$path_etc/nginx/deva/vhosts/$vhost.conf" "$path_etc/nginx/deva/vhosts/$vhost.conf.temp"
+    sudo nano "$path_etc/nginx/deva/vhosts/$vhost.conf"
+    if cmp --silent "$path_etc/nginx/deva/vhosts/$vhost.conf" "$path_etc/nginx/deva/vhosts/$vhost.conf.temp"; then
+        sudo rm -f "$path_etc/nginx/deva/vhosts/$vhost.conf.temp"
+        # shellcheck disable=SC2105
+        continue
+    fi
+    if ! sudo nginx -t >/dev/null 2>&1; then
+        red "There was an issue with the configuration file! A backup has been restored.\nPress any key to continue ..."
+        sudo rm -f "$path_etc/nginx/deva/vhosts/$vhost.conf"
+        sudo mv "$path_etc/nginx/deva/vhosts/$vhost.conf.temp" "$path_etc/nginx/deva/vhosts/$vhost.conf"
+        wait_keypress
+    else
+        newhostname=$(sed -n '/server_name/p' "$path_etc/nginx/deva/vhosts/$vhost.conf")
+        newhostname=$(echo -e "$newhostname" | tr -d '[:space:]' | sed 's/[ ;]*$//')
+        newhostname=${newhostname:11}
+        if [ "$newhostname" != "$vhost" ]; then
+            if [ "$newhostname" == "localhost" ] || [[ "$newhostname" =~ [^a-zA-Z0-9._-] ]] || [[ $newhostname == '' ]] || [[ "$newhostname" == ___* ]] || [[ "$newhostname" != *.dev ]] || [ -f "$path_etc/nginx/deva/vhosts/$newhostname.conf" ]; then
+                red "Invalid host name! A backup has been restored.\nPress any key to continue ..."
+                sudo rm -f "$path_etc/nginx/deva/vhosts/$vhost.conf"
+                sudo mv "$path_etc/nginx/deva/vhosts/$vhost.conf.temp" "$path_etc/nginx/deva/vhosts/$vhost.conf"
+                wait_keypress
+                # shellcheck disable=SC2105
+                continue
+            fi
+            sudo mv "$path_etc/nginx/deva/vhosts/$vhost.conf" "$path_etc/nginx/deva/vhosts/$newhostname.conf"
+            # shellcheck disable=SC2154
+            if [ "$os" == "macos" ]; then
+                sudo sed -i '' "/$vhost/d" /etc/hosts
+            else
+                sudo sed -i "/$vhost/d" /etc/hosts
+            fi
+            if ! grep -q "$newhostname" "/etc/hosts"; then
+                echo -e "127.0.0.1\t$newhostname" | sudo tee -a /etc/hosts
+            fi
+        fi
+        sudo rm -f "$path_etc/nginx/deva/vhosts/$vhost.conf.temp"
+        if [ "$os" == "macos" ]; then
+            sudo chown -R "$(whoami)":admin /usr/local/etc/nginx
+            sudo brew services restart nginx
+        else
+            sudo service nginx reload
+        fi
+    fi
+fi

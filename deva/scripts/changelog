@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# DevA - Web Development Environment
+# Created by Miguel Nunes
+# https://github.com/mignz/DevA
+
+# ------------------------------------------------------------------------------
+
+# Show changelog
+
+rand=$(randstring)
+get "CHANGELOG.md" ~/.deva_readme_temp_"$rand".md
+pandoc -s -t rst ~/.deva_readme_temp_"$rand".md -o ~/.deva_readme_temp_"$rand".txt
+rm -f ~/.deva_readme_temp_"$rand".md
+echo -e "\n\nNote: Type 'q' to leave this document." >> ~/.deva_readme_temp_"$rand".txt
+less ~/.deva_readme_temp_"$rand".txt
+rm -f ~/.deva_readme_temp_"$rand".txt

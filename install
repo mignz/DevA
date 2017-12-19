@@ -1,0 +1,476 @@
+#!/bin/bash
+
+# DevA - Web Development Environment
+# Created by Miguel Nunes
+# https://github.com/mignz/DevA
+
+# ------------------------------------------------------------------------------
+
+# Text colors
+
+function red {
+    echo -e "\033[91m$1\033[39m"
+}
+
+# ------------------------------------------------------------------------------
+
+# Detect OS
+
+case "$(uname -s)" in
+    Linux*) os=linux;;
+    Darwin*) os=macos;;
+    *) red "Invalid operating system! Only macOS and Ubuntu supported."; exit 1;;
+esac
+
+# ------------------------------------------------------------------------------
+
+# Helpers
+
+function replace {
+    if [ $os == "macos" ]; then
+        sudo sed -i '' "s@$1@$2@g" "$3"
+    else
+        sudo sed -i "s@$1@$2@g" "$3"
+    fi
+}
+
+profile_newline=0
+function profile {
+    path_profile=~/.bash_profile
+    [ $os == "linux" ] && path_profile=~/.profile
+    if ! grep -q "$1" $path_profile; then
+        if [[ -s $path_profile ]] && [ $profile_newline -eq 0 ]; then
+            echo "" >> $path_profile
+        fi
+        echo -e "$2" >> $path_profile
+        profile_newline=1
+    fi
+}
+
+function error {
+    red "$1"
+    exit 1
+}
+
+function get {
+    data=$(curl -SsL "https://raw.githubusercontent.com/mignz/DevA/master/$1")
+    echo "Fetching $1 from Git repository ..."
+    if [ "$3" == "--sudo" ]; then
+        echo "$data" | sudo tee "$2"
+    else
+        echo "$data" | tee "$2"
+    fi
+}
+
+function replace {
+    if [ $os == "macos" ]; then
+        sudo sed -i '' "s@$1@$2@g" "$3"
+    else
+        sudo sed -i "s@$1@$2@g" "$3"
+    fi
+}
+
+function prompt_path {
+    if env | grep -q ^DEVA_WWW_PATH=; then
+        www_path=$DEVA_WWW_PATH
+    else
+        www_path=$(dialog --title "DevA Installation" --backtitle "DevA Installation" --inputbox "Please select the directory where the websites will be located. It will be created if it doesn't exist:" 9 70 "$HOME/Sites" 3>&1 1>&2 2>&3 3>&-)
+        if [ $? -eq 1 ]; then
+            www_path=$HOME/Sites
+        fi
+    fi
+    mkdir -p "$www_path"
+    clear
+    echo "Working ..."
+    if [ ! -d "$www_path" ]; then
+        error "Unable to use this path, permission denied!"
+    fi
+}
+
+function prompt_smtp {
+    if env | grep -q ^DEVA_SMTP_HOST=; then
+        smtphost=$DEVA_SMTP_HOST
+        smtpmail=$DEVA_SMTP_MAIL
+        smtppass=$DEVA_SMTP_PASS
+    else
+        smtp=$(dialog --title "Configure Mail" --backtitle "DevA Installation" \
+        --form "\nEnter a valid SMTP account so the phpmail works on localhost:" 12 60 3 \
+        "SMTP Domain:" 1 1 "" 1 25 25 30 \
+        "SMTP Username:" 2 1 "" 2 25 25 30 \
+        "SMTP Password:" 3 1 "" 3 25 25 30 3>&1 1>&2 2>&3 3>&-)
+        if [ $? -eq 1 ]; then
+            clear
+            error "Sorry, the SMTP account is required!\nYou can use your Gmail account, for example..."
+        fi
+        smtparr=($smtp)
+        smtphost=${smtparr[0]}
+        smtpmail=${smtparr[1]}
+        smtppass=${smtparr[2]}
+        clear
+        if [ -z "$smtphost" ] || [ -z "$smtpmail" ] || [ -z "$smtppass" ]; then
+            prompt_smtp
+        fi
+    fi
+}
+
+# ------------------------------------------------------------------------------
+
+# Checks
+
+function check_network {
+    if ! echo -e "GET http://google.com HTTP/1.0\n\n" | nc google.com 80 > /dev/null 2>&1; then
+        error "Network connection required for installation!"
+    fi
+}
+
+# ------------------------------------------------------------------------------
+
+# Preflight Checks
+
+[ ! "$EUID" -ne 0 ] && error "Plese do NOT run as admin!"
+[ -f /usr/local/DevA/deva ] && error "DevA is already installed!"
+
+# ------------------------------------------------------------------------------
+
+# Setup the environment
+
+echo "Working ..."
+
+check_network
+
+if [ $os == "macos" ]; then
+    # Paths & Versions
+    
+    phpversion=php71
+    phalcon_devtools=~3.2
+    path_php=/usr/local/etc/php/7.1
+    path_nginx=/usr/local/etc/nginx
+    path_etc=/usr/local/etc
+    
+    # 1. Update the system and configure repository
+    
+    ! hash brew >/dev/null 2>&1 && /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    brew tap homebrew/homebrew-php
+    brew update
+    brew upgrade
+    
+    # 2. Install dependencies
+    
+    brew install dialog \
+        pandoc
+    
+    # 3. Install PHP/MySQL/Nginx
+    
+    brew install \
+        $phpversion \
+        $phpversion-gmp \
+        $phpversion-intl \
+        $phpversion-mcrypt \
+        $phpversion-opcache \
+        $phpversion-phalcon \
+        $phpversion-pspell \
+        $phpversion-redis \
+        $phpversion-tidy \
+        $phpversion-xdebug \
+        mysql \
+        nginx \
+        composer \
+        node \
+        mongodb
+    
+    # 3. MySQL
+    
+    # 4. PHP
+    
+    echo "include=$path_php/deva_php-fpm.conf" | tee "$path_php/php-fpm.conf"
+    get "conf/php/fpm-macos.conf" "$path_php/deva_php-fpm.conf"
+    replace ';cgi.fix_pathinfo=1' 'cgi.fix_pathinfo=0' $path_php/php.ini
+    replace ';opcache.enable=0' 'opcache.enable=0' $path_php/php.ini
+    replace ';opcache.enable=1' 'opcache.enable=0' $path_php/php.ini
+    replace 'allow_url_fopen = On' 'allow_url_fopen = Off' $path_php/php.ini
+    replace 'display_errors = Off' 'display_errors = On' $path_php/php.ini
+    replace 'display_startup_errors = Off' 'display_startup_errors = On' $path_php/php.ini
+    replace 'log_errors = On' 'log_errors = Off' $path_php/php.ini
+    replace ';date.timezone =' 'date.timezone = "Atlantic\/Azores"' $path_php/php.ini
+    replace 'error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT' 'error_reporting = E_ALL' $path_php/php.ini
+    replace 'upload_max_filesize = 2M' 'upload_max_filesize = 1G' $path_php/php.ini
+    replace 'post_max_size = 8M' 'post_max_size = 1G' $path_php/php.ini
+    replace ';session.save_path = "/tmp"' 'session.save_path = "/usr/local/var/tmp"' $path_php/php.ini
+    replace 'disable_functions =' 'disable_functions = exec,pcntl_exec,system,proc_nice,popen,pclose,curl_multi_exec,parse_ini_file,ini_get_all,ini_restore,show_source,eval,assert,dl,apache_note,apache_setenv,closelog,debugger_off,debugger_on,define_syslog_variables,openlog,syslog,url_exec,inject_code,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,posix_kill,posix_mkfifo,posix_setpgid,posix_setsid,posix_setuid,posix_uname,xmlrpc_entity_decode,pcntl_alarm,pcntl_fork,pcntl_waitpid,pcntl_wait,pcntl_wifexited,pcntl_wifstopped,pcntl_wifsignaled,pcntl_wexitstatus,pcntl_wtermsig,pcntl_wstopsig,pcntl_signal,pcntl_signal_dispatch,pcntl_get_last_error,pcntl_strerror,pcntl_sigprocmask,pcntl_sigwaitinfo,pcntl_sigtimedwait,pcntl_getpriority,pcntl_setpriority,opcache_get_status' $path_php/php.ini
+    echo -e "\n; Xdebug configuration for DevA\nxdebug.var_display_max_depth = -1\nxdebug.var_display_max_children = -1\nxdebug.var_display_max_data = -1" | tee -a $path_php/php.ini
+    
+    # 5. Nginx
+    
+    mkdir -p $path_nginx/deva/vhosts $path_nginx/ssl
+    rm -rf $path_nginx/servers
+    echo "include deva/deva.conf;" | tee $path_nginx/nginx.conf &
+    get "conf/nginx/deva.conf" "$path_nginx/deva/deva.conf" &
+    get "conf/nginx/deva_common.conf" "$path_nginx/deva/deva_common.conf" &
+    get "conf/nginx/deva_html.conf" "$path_nginx/deva/deva_html.conf" &
+    get "conf/nginx/deva_phalcon.conf" "$path_nginx/deva/deva_phalcon.conf" &
+    get "conf/nginx/deva_php.conf" "$path_nginx/deva/deva_php.conf" &
+    get "conf/nginx/deva.tpl" "$path_nginx/deva/deva.tpl" &
+    get "conf/nginx/deva_404.html" "$path_nginx/deva/deva_404.html" &
+    get "conf/nginx/localhost.conf" "$path_nginx/deva/vhosts/___localhost.conf" &
+    wait
+    prompt_path
+    replace "USER_PLACEHOLDER" "$(whoami)" $path_nginx/deva/deva.conf
+    replace "GROUP_PLACEHOLDER" "admin" $path_nginx/deva/deva.conf
+    replace "WWWDIR_PLACEHOLDER" "$www_path" $path_nginx/deva/vhosts/___localhost.conf
+    replace "PATH_NGINX" "$path_nginx" $path_nginx/deva/deva_common.conf
+    openssl req -x509 -nodes -days 3652 -newkey rsa:2048 -keyout $path_nginx/ssl/nginx.key -out $path_nginx/ssl/nginx.crt -subj "/C=PT/ST=PDL/L=PDL/O=DevA/OU=IT/CN=localhost"
+    echo "$www_path" | tee $path_nginx/deva/deva_www
+    
+    # 6. Configure composer
+    
+    composer global config bin-dir --absolute
+    
+    # 7. Install Phalcon DevTools
+    
+    sudo mkdir -p /usr/local/phalcondevtools
+    sudo chown "$(whoami)":admin /usr/local/phalcondevtools
+    echo -e "{\n    \"require-dev\": {\n        \"phalcon/devtools\": \"$phalcon_devtools\"\n    }\n}" > /usr/local/phalcondevtools/composer.json
+    cd /usr/local/phalcondevtools && composer install
+    chmod +x /usr/local/phalcondevtools/vendor/phalcon/devtools/phalcon.sh
+    /usr/local/phalcondevtools/vendor/phalcon/devtools/phalcon.sh
+    
+    # 8. Secure MongoDB
+    
+    brew services start mongodb
+    mongo admin --eval "db.createUser({user:'root',pwd:'root',roles:['root']})"
+    echo -e "security:\n  authorization: enabled" | sudo tee -a "$path_etc/mongod.conf"
+    
+    # 9. Configure postfix
+    
+    sudo postfix start
+    prompt_smtp
+    echo -e "# DevA Test SMTP Connection\n#\nrelayhost = [$smtphost]:587\nsmtp_sasl_auth_enable = yes\nsmtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd\nsmtp_sasl_security_options = noanonymous\nsmtp_tls_CAfile = $path_nginx/ssl/nginx.crt\nsmtp_use_tls = yes" | sudo tee -a /etc/postfix/main.cf
+    echo -e "[$smtphost]:587 $smtpmail:$smtppass" | sudo tee /etc/postfix/sasl_passwd
+    sudo chmod 400 /etc/postfix/sasl_passwd
+    sudo postmap /etc/postfix/sasl_passwd
+    sudo postfix reload
+    get "conf/postfix/org.postfix.master.plist" "/Library/LaunchDaemons/org.postfix.master.plist"
+    
+    # 10. Add entries to PATH
+    
+    profile "/usr/local/opt/$phpversion/bin" "export PATH=\"/usr/local/opt/$phpversion/bin:\$PATH\""
+    profile "/usr/local/bin" "export PATH=\"/usr/local/bin:\$PATH\""
+    profile "/usr/local/sbin" "export PATH=\"/usr/local/sbin:\$PATH\""
+    profile "composer/vendor/bin" "export PATH=\"\$PATH:\$HOME/.composer/vendor/bin\""
+    
+    # 11. Start services
+    
+    brew services start $phpversion
+    brew services start mysql
+    brew services stop mongodb
+    sudo brew services start nginx
+    
+    # 12. Cleanup
+    
+    brew cleanup
+else
+    # Paths & Versions
+    
+    phpversion=php7.1
+    phalcon_devtools=~3.2
+    path_php=/etc/php/7.1/fpm
+    path_nginx=/etc/nginx
+    path_etc=/etc
+    
+    # 1. Update the system and configure repository
+    
+    export DEBIAN_FRONTEND=noninteractive
+    export LANGUAGE="en_US.UTF-8"
+    export LANG="en_US.UTF-8"
+    export LC_ALL="en_US.UTF-8"
+    sudo apt-get update && sudo apt-get -y dist-upgrade
+    sudo apt-get install -y python-software-properties curl
+    sudo add-apt-repository -y ppa:ondrej/php
+    curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
+    curl -s "https://packagecloud.io/install/repositories/phalcon/stable/script.deb.sh" | sudo bash
+    
+    # 2. Install dependencies
+    
+    sudo apt-get install -y dialog \
+        pandoc
+    
+    # 3. Install PHP/MySQL/Nginx
+    
+    sudo apt-get install -y \
+        $phpversion \
+        $phpversion-bcmath \
+        $phpversion-bz2 \
+        $phpversion-cgi \
+        $phpversion-cli \
+        $phpversion-curl \
+        $phpversion-dev \
+        $phpversion-dba \
+        $phpversion-enchant \
+        $phpversion-fpm \
+        $phpversion-gd \
+        $phpversion-gmp \
+        $phpversion-imap \
+        $phpversion-intl \
+        $phpversion-json \
+        $phpversion-mbstring \
+        $phpversion-mcrypt \
+        $phpversion-mysql \
+        $phpversion-opcache \
+        $phpversion-phalcon \
+        $phpversion-pspell \
+        $phpversion-readline \
+        $phpversion-sqlite3 \
+        $phpversion-tidy \
+        $phpversion-xml \
+        $phpversion-xmlrpc \
+        $phpversion-zip \
+        php-apcu \
+        php-imagick \
+        php-xdebug \
+        nginx \
+        nodejs \
+        mongodb
+    
+    # 3. MySQL
+    
+    sudo debconf-set-selections <<< 'mysql-server mysql-server/root_password password root'
+    sudo debconf-set-selections <<< 'mysql-server mysql-server/root_password_again password root'
+    sudo apt-get install -q mysql-server -y
+    sudo apt-get install -y mysql-client
+    sudo service mysql restart
+    sudo mysqladmin -u root -proot password ''
+    sudo service mysql stop
+    
+    # 4. PHP
+    
+    echo "include=$path_php/deva_php-fpm.conf" | sudo tee "$path_php/php-fpm.conf"
+    get "conf/php/fpm-linux.conf" "$path_php/deva_php-fpm.conf" --sudo
+    replace ';cgi.fix_pathinfo=1' 'cgi.fix_pathinfo=0' $path_php/php.ini
+    replace ';opcache.enable=0' 'opcache.enable=0' $path_php/php.ini
+    replace ';opcache.enable=1' 'opcache.enable=0' $path_php/php.ini
+    replace 'allow_url_fopen = On' 'allow_url_fopen = Off' $path_php/php.ini
+    replace 'display_errors = Off' 'display_errors = On' $path_php/php.ini
+    replace 'display_startup_errors = Off' 'display_startup_errors = On' $path_php/php.ini
+    replace 'log_errors = On' 'log_errors = Off' $path_php/php.ini
+    replace ';date.timezone =' 'date.timezone = "Atlantic\/Azores"' $path_php/php.ini
+    replace 'error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT' 'error_reporting = E_ALL' $path_php/php.ini
+    replace 'upload_max_filesize = 2M' 'upload_max_filesize = 1G' $path_php/php.ini
+    replace 'post_max_size = 8M' 'post_max_size = 1G' $path_php/php.ini
+    replace ';session.save_path = "/tmp"' 'session.save_path = "/usr/local/var/tmp"' $path_php/php.ini
+    replace 'disable_functions =' 'disable_functions = exec,pcntl_exec,system,proc_nice,popen,pclose,curl_multi_exec,parse_ini_file,ini_get_all,ini_restore,show_source,eval,assert,dl,apache_note,apache_setenv,closelog,debugger_off,debugger_on,define_syslog_variables,openlog,syslog,url_exec,inject_code,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,posix_kill,posix_mkfifo,posix_setpgid,posix_setsid,posix_setuid,posix_uname,xmlrpc_entity_decode,pcntl_alarm,pcntl_fork,pcntl_waitpid,pcntl_wait,pcntl_wifexited,pcntl_wifstopped,pcntl_wifsignaled,pcntl_wexitstatus,pcntl_wtermsig,pcntl_wstopsig,pcntl_signal,pcntl_signal_dispatch,pcntl_get_last_error,pcntl_strerror,pcntl_sigprocmask,pcntl_sigwaitinfo,pcntl_sigtimedwait,pcntl_getpriority,pcntl_setpriority,opcache_get_status' $path_php/php.ini
+    echo -e "\n; Xdebug configuration for DevA\nxdebug.var_display_max_depth = -1\nxdebug.var_display_max_children = -1\nxdebug.var_display_max_data = -1" | sudo tee -a $path_php/php.ini
+    sudo service $phpversion-fpm stop
+    
+    # 5. Nginx
+    
+    sudo mkdir -p $path_nginx/deva/vhosts $path_nginx/ssl
+    sudo rm -rf $path_nginx/sites-available $path_nginx/sites-enabled
+    echo "include deva/deva.conf;" | sudo tee $path_nginx/nginx.conf &
+    get "conf/nginx/deva.conf" "$path_nginx/deva/deva.conf" --sudo &
+    get "conf/nginx/deva_common.conf" "$path_nginx/deva/deva_common.conf" --sudo &
+    get "conf/nginx/deva_html.conf" "$path_nginx/deva/deva_html.conf" --sudo &
+    get "conf/nginx/deva_phalcon.conf" "$path_nginx/deva/deva_phalcon.conf" --sudo &
+    get "conf/nginx/deva_php.conf" "$path_nginx/deva/deva_php.conf" --sudo &
+    get "conf/nginx/deva.tpl" "$path_nginx/deva/deva.tpl" --sudo &
+    get "conf/nginx/deva_404.html" "$path_nginx/deva/deva_404.html" --sudo &
+    get "conf/nginx/localhost.conf" "$path_nginx/deva/vhosts/___localhost.conf" --sudo &
+    wait
+    prompt_path
+    replace "USER_PLACEHOLDER" "$(whoami)" $path_nginx/deva/deva.conf
+    replace "GROUP_PLACEHOLDER" "$(whoami)" $path_nginx/deva/deva.conf &
+    replace "WWWDIR_PLACEHOLDER" "$www_path" $path_nginx/deva/vhosts/___localhost.conf &
+    replace "PATH_NGINX" "$path_nginx" $path_nginx/deva/deva_common.conf &
+    sudo openssl req -x509 -nodes -days 3652 -newkey rsa:2048 -keyout $path_nginx/ssl/nginx.key -out $path_nginx/ssl/nginx.crt -subj "/C=PT/ST=PDL/L=PDL/O=DevA/OU=IT/CN=localhost"
+    echo "$www_path" | sudo tee $path_nginx/deva/deva_www
+    sudo service nginx stop
+    
+    # 6. Configure composer
+    
+    cd ~ && sudo curl -s https://getcomposer.org/installer | php
+    sudo mv ~/composer.phar /usr/local/bin/composer
+    composer global config bin-dir --absolute
+    
+    # 7. Install Phalcon DevTools
+    
+    sudo mkdir -p /usr/local/phalcondevtools
+    sudo chown "$(whoami)":"$(whoami)" /usr/local/phalcondevtools
+    echo -e "{\n    \"require-dev\": {\n        \"phalcon/devtools\": \"$phalcon_devtools\"\n    }\n}" > /usr/local/phalcondevtools/composer.json
+    cd /usr/local/phalcondevtools && composer install
+    chmod +x /usr/local/phalcondevtools/vendor/phalcon/devtools/phalcon.sh
+    /usr/local/phalcondevtools/vendor/phalcon/devtools/phalcon.sh
+    
+    # 8. Secure MongoDB
+    
+    sudo service mongodb start
+    mongo admin --eval "db.createUser({user:'root',pwd:'root',roles:['root']})"
+    echo -e "security:\n  authorization: enabled" | sudo tee -a "$path_etc/mongod.conf"
+    sudo service mongodb stop
+    
+    # 9. Configure postfix
+    
+    prompt_smtp
+    sudo debconf-set-selections <<< "postfix postfix/mailname string $smtphost"
+    sudo debconf-set-selections <<< "postfix postfix/main_mailer_type string 'Internet Site'"
+    sudo apt-get install -y postfix
+    replace "relayhost =" "#relayhost =" /etc/postfix/main.cf
+    echo -e "\n# DevA Test SMTP Connection\nrelayhost = [$smtphost]:587\nsmtp_sasl_auth_enable = yes\nsmtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd\nsmtp_sasl_security_options = noanonymous\nsmtp_tls_CAfile = $path_nginx/ssl/nginx.crt\nsmtp_use_tls = yes" | sudo tee -a /etc/postfix/main.cf
+    echo -e "[$smtphost]:587 $smtpmail:$smtppass" | sudo tee /etc/postfix/sasl_passwd
+    sudo chmod 400 /etc/postfix/sasl_passwd
+    sudo postmap /etc/postfix/sasl_passwd
+    sudo service postfix stop
+    
+    # 10. Add entries to PATH
+    
+    profile "composer/vendor/bin" "export PATH=\"\$PATH:\$HOME/.config/composer/vendor/bin\""
+    
+    # 11. Start services
+    
+    sudo service $phpversion-fpm start
+    sudo service mysql start
+    sudo service nginx start
+    sudo service postfix start
+    
+    # 12. Cleanup
+    
+    sudo apt-get clean
+    sudo apt-get -y autoremove
+fi
+
+# ------------------------------------------------------------------------------
+
+# Install DevA control panel
+
+sudo mkdir -p /usr/local/DevA/scripts
+get "deva/deva" "/usr/local/DevA/deva" --sudo
+get "deva/scripts/backup" "/usr/local/DevA/scripts/backup" --sudo
+get "deva/scripts/changelog" "/usr/local/DevA/scripts/changelog" --sudo
+get "deva/scripts/doctor" "/usr/local/DevA/scripts/doctor" --sudo
+get "deva/scripts/hosts" "/usr/local/DevA/scripts/hosts" --sudo
+get "deva/scripts/hosts_add" "/usr/local/DevA/scripts/hosts_add" --sudo
+get "deva/scripts/hosts_default" "/usr/local/DevA/scripts/hosts_default" --sudo
+get "deva/scripts/hosts_edit" "/usr/local/DevA/scripts/hosts_edit" --sudo
+get "deva/scripts/hosts_remove" "/usr/local/DevA/scripts/hosts_remove" --sudo
+get "deva/scripts/permissions" "/usr/local/DevA/scripts/permissions" --sudo
+get "deva/scripts/phpinfo" "/usr/local/DevA/scripts/phpinfo" --sudo
+get "deva/scripts/restore" "/usr/local/DevA/scripts/restore" --sudo
+get "deva/scripts/services" "/usr/local/DevA/scripts/services" --sudo
+get "deva/scripts/updates" "/usr/local/DevA/scripts/updates" --sudo
+sudo ln -s /usr/local/DevA/deva /usr/local/bin/dev
+if [ "$os" == "macos" ]; then
+    sudo chown -R "$(whoami)":admin /usr/local/DevA
+    sudo chown "$(whoami)":admin /usr/local/bin/dev
+else
+    sudo chown -R "$(whoami)":"$(whoami)" /usr/local/DevA
+fi
+sudo chmod -R +x /usr/local/DevA
+
+# ------------------------------------------------------------------------------
+
+# Show finish message
+
+dialog --colors --title "Setup complete!" --backtitle "DevA Installation" --msgbox "A control panel has been installed in the system.\nTo use it, type the following command in the Terminal:\n\n\Z6$(whoami)@$HOSTNAME ~ $ \Z0dev\n\nThis control panel allows you to manage virtual hosts, backup/restore websites, manage services and check for updates.\n\nYou can try opening http://localhost or https://localhost in the browser now." 14 70
+clear
+
+rm -f "$0"
+
+exit 0

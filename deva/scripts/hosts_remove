@@ -1,0 +1,69 @@
+#!/bin/bash
+
+# DevA - Web Development Environment
+# Created by Miguel Nunes
+# https://github.com/mignz/DevA
+
+# ------------------------------------------------------------------------------
+
+# Get virtual hosts
+
+vhosts=()
+# shellcheck disable=SC2154
+for f in $path_etc/nginx/deva/vhosts/*.conf
+do
+    host="$(basename "$f" .conf)"
+    host=${host/___/}
+    if [ "$host" == "localhost" ]; then
+        continue
+    fi
+    vhosts+=($host)
+done
+if [ "${#vhosts[@]}" -lt 1 ]; then
+    red "No virtual hosts to remove! Press any key to continue ..."
+    wait_keypress
+    # shellcheck disable=SC2105
+    continue
+fi
+
+# ------------------------------------------------------------------------------
+
+# Prompt virtual host selection
+
+i=0
+options=()
+for host in "${vhosts[@]}"
+do
+    ((i++))
+    options+=($i "$host")
+done
+choice=$(dialog --clear \
+    --title "Select Virtual Host" \
+    --backtitle "DevA > Virtual Hosts > Remove Virtual Host" \
+    --keep-tite \
+    --menu "Which virtual host do you wish to remove?" \
+    16 45 10 \
+    "${options[@]}" \
+    2>&1 >/dev/tty)
+# shellcheck disable=SC2105
+[ $? -eq 1 ] && continue
+((choice--))
+vhost=${vhosts[$choice]}
+
+# ------------------------------------------------------------------------------
+
+# Remove virtual host
+
+if [ ! -f "$path_etc/nginx/deva/vhosts/$vhost.conf" ]; then
+    error "Virtual host not found! Press any key to continue ..."
+else
+    sudo rm -f "$path_etc/nginx/deva/vhosts/$vhost.conf"
+    # shellcheck disable=SC2154
+    if [ "$os" == "macos" ]; then
+        sudo sed -i '' "/$vhost/d" /etc/hosts
+        sudo brew services restart nginx
+    else
+        sudo sed -i "/$vhost/d" /etc/hosts
+        sudo service nginx reload
+    fi
+fi

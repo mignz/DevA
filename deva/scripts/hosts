@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# DevA - Web Development Environment
+# Created by Miguel Nunes
+# https://github.com/mignz/DevA
+
+# ------------------------------------------------------------------------------
+
+# Helpers
+
+function replace {
+    # shellcheck disable=SC2154
+    if [ "$os" == "macos" ]; then
+        sudo sed -i '' "s@$1@$2@g" "$3"
+    else
+        sudo sed -i "s@$1@$2@g" "$3"
+    fi
+}
+
+# ------------------------------------------------------------------------------
+
+# Hosts Menu
+
+while :
+do
+    menu_header "DevA > Virtual Hosts" "H O S T S - M A N A G E R"
+    yellow "  Active hosts:\n"
+    i=0
+    # shellcheck disable=SC2154
+    for f in $path_etc/nginx/deva/vhosts/*.conf
+    do
+        ((i++))
+        vhostname="$(basename "$f" .conf)"
+        if [[ $vhostname == "___"* ]]; then
+            vhostname="$(basename "${vhostname/___/}" .conf) (Default)"
+        fi
+        echo "  • $vhostname"
+    done
+    if [ $i -eq 0 ]; then
+        error "Error! No vhosts found in $path_etc/nginx/deva/vhosts!"
+    fi
+    echo -e -n "\n  \033[1mEnter your choice [a/e/r/d/b]\033[0;27m "
+    read -r -s -n1 key
+    clear
+    # shellcheck disable=SC1091
+    case $key in
+        [a/A]) . scripts/hosts_add;;
+        [d/D]) . scripts/hosts_default;;
+        [e/E]) . scripts/hosts_edit;;
+        [r/R]) . scripts/hosts_remove;;
+        *) break;;
+    esac
+done

@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# DevA - Web Development Environment
+# Created by Miguel Nunes
+# https://github.com/mignz/DevA
+
+# ------------------------------------------------------------------------------
+
+# Check if possible to show PHP Info
+
+# shellcheck disable=SC2154
+if [ ! -f "$path_etc/nginx/deva/vhosts/___localhost.conf" ]; then
+    clear
+    red "localhost must be the default host for phpinfo() to work.\nPress any key to continue ..."
+    wait_keypress
+    return
+fi
+if ! check_service "nginx" || ! check_service "php-fpm"; then
+    clear
+    red "Both Nginx and PHP services must be running to show phpinfo().\nPress any key to continue ..."
+    wait_keypress
+    return
+fi
+
+# ------------------------------------------------------------------------------
+
+# Generate file
+
+rand=$(randstring)
+echo "<?php phpinfo();" > "$(cat "$path_etc/nginx/deva/deva_www")/deva_phpinfo_temp_$rand.php"
+
+# ------------------------------------------------------------------------------
+
+# Open in default browser
+
+if [ "$os" == "macos" ]; then
+    open "http://localhost/deva_phpinfo_temp_$rand.php"
+else
+    sensible-browser "http://localhost/deva_phpinfo_temp_$rand.php"
+fi
+
+# ------------------------------------------------------------------------------
+
+# Remove file
+
+sleep 3
+rm -f "$(cat "$path_etc/nginx/deva/deva_www")/deva_phpinfo_temp_$rand.php"

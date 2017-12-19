@@ -1,0 +1,19 @@
+language: bash
+
+sudo: false
+
+addons:
+  apt:
+    sources:
+    - debian-sid
+    packages:
+    - shellcheck
+
+script:
+  - shellcheck install
+  - shellcheck update
+  - shellcheck deva/deva
+  - shellcheck deva/scripts/*
+
+matrix:
+  fast_finish: true

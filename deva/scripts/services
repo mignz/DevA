@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# DevA - Web Development Environment
+# Created by Miguel Nunes
+# https://github.com/mignz/DevA
+
+# ------------------------------------------------------------------------------
+
+# Helpers
+
+function check_ports {
+    for port in "$@"
+    do
+        if nc -zv 127.0.0.1 "$port" 2>&1 | grep "found 1 connections" &> /dev/null; then
+            error "Port $1 is being used. Find what's using it, stop that service and prevent it\nfrom starting again."
+        fi
+    done
+}
+
+# ------------------------------------------------------------------------------
+
+# Start/Stop Services
+
+clear
+if check_service nginx >/dev/null 2>&1; then
+    green "Nginx is running, stopping all services ..."
+    # shellcheck disable=SC2154
+    if [ "$os" == "macos" ]; then
+        sudo brew services stop nginx
+        brew services stop "$phpversion"
+        brew services stop mysql
+        brew services stop mongodb
+    else
+        sudo service nginx stop
+        sudo service "$phpversion-fpm" stop
+        sudo service mysql stop
+        sudo service mongodb stop
+    fi
+else
+    green "Nginx is stopped, starting all services ..."
+    check_ports 80 443 3306 27017
+    if [ "$os" == "macos" ]; then
+        sudo brew services start nginx
+        brew services start "$phpversion"
+        brew services start mysql
+        brew services start mongodb
+    else
+        sudo service nginx start
+        sudo service "$phpversion-fpm" start
+        sudo service mysql start
+        sudo service mongodb start
+    fi
+    
+    if ! check_service nginx >/dev/null 2>&1; then
+        red "Unable to start Nginx! Please see the log.\nPress any key to continue ..."
+        wait_keypress
+    fi
+fi

@@ -1,0 +1,176 @@
+#!/bin/bash
+
+# DevA - Web Development Environment
+# Created by Miguel Nunes
+# https://github.com/mignz/DevA
+
+# ------------------------------------------------------------------------------
+
+# Update
+
+# shellcheck disable=SC2034
+this_update=8
+
+# ------------------------------------------------------------------------------
+
+# Text colors
+
+function red {
+    echo -e "\033[91m$1\033[39m"
+}
+
+function green {
+    echo -e "\033[92m$1\033[39m"
+}
+
+function blue {
+    echo -e "\033[94m$1\033[39m"
+}
+
+function yellow {
+    echo -e "\033[93m$1\033[39m"
+}
+
+# ------------------------------------------------------------------------------
+
+# Detect OS
+
+case "$(uname -s)" in
+    Linux*) os=linux;;
+    Darwin*) os=macos;;
+    *) red "Invalid operating system! Only macOS and Ubuntu supported."; exit 1;;
+esac
+
+# ------------------------------------------------------------------------------
+
+# Paths & Variables
+
+if [ $os == "macos" ]; then
+    path_etc=/usr/local/etc
+    phpversion=php71
+else
+    # shellcheck disable=SC2034
+    path_etc=/etc
+    phpversion=php7.1
+fi
+
+# ------------------------------------------------------------------------------
+
+# Helpers
+
+function error {
+    red "$1"
+    exit 1
+}
+
+function wait_keypress {
+    read -p "" -n 1 -r
+}
+
+function randstring {
+    randstr=$((1 + RANDOM % 100000000))
+    if [ $os == "macos" ]; then
+        echo $randstr | md5
+    else
+        echo $randstr | md5sum | cut -d " " -f 1
+    fi
+}
+
+function vcurrent {
+    if [ $os == "macos" ]; then
+        brew ls --versions "$1" | cut -d " " -f 2 | cut -d "_" -f 1
+    else
+        dpkg -s "$1" | grep Version | cut -d " " -f 2 | cut -d "-" -f 1
+    fi
+}
+
+function vlast {
+    if [ $os == "macos" ]; then
+        brew info "$1" | sed -n 1p | cut -d " " -f 3
+    else
+        apt-cache policy "$1" | grep Candidate | cut -d " " -f 4 | cut -d "-" -f 1
+    fi
+}
+
+function get {
+    data=$(curl -SsL "https://raw.githubusercontent.com/mignz/DevA/master/$1")
+    echo "Fetching $1 from Git repository ..."
+    if [ "$#" -eq 1 ]; then
+        echo "$data"
+    else
+        echo "$data" > "$2"
+    fi
+}
+
+# ------------------------------------------------------------------------------
+
+# Menu
+
+function menu_header {
+    clear
+    blue "\n  \033[1m$1\033[0m\n"
+    echo -e "  \033[1;7m $2 \033[0;27m\n"
+}
+
+function check_service {
+    if pgrep "$1" >/dev/null 2>&1; then
+        echo -e "\033[42m $2 \033[49m"
+        return 0
+    else
+        echo -e "\033[41m $2 \033[49m"
+        return 1
+    fi
+}
+
+# ------------------------------------------------------------------------------
+
+# Main Menu
+
+function build_menu {
+    menuitems=( "${@:2:$1}" )
+    shift "$(( $1 + 1 ))"
+    menuactions=( "${@:2:$1}" )
+    num=$(($1+2))
+    while :
+    do
+        title=${!num}
+        menu_header "DevA" "$title"
+        i=0
+        for item in "${menuitems[@]}"
+        do
+            ((i++))
+            echo "  $i. $item"
+        done
+        echo -e "\n  q. Exit"
+        echo -e "\n  $(check_service nginx WEB) $(check_service php-fpm PHP) $(check_service mysql SQL) $(check_service mongod MONGO)"
+        echo -e -n "\n  \033[1mEnter your choice [1-$i/q]\033[0;27m "
+        read -r -s -n1 key
+        clear
+        case $key in
+            $'\e') exit 0;;
+            [q/Q]) exit 0;;
+            [b/B]) break;;
+            *)
+                if [ "$key" -lt 1 ] || [ "$key" -gt $i ] || ! [[ "$key" =~ ^[0-9]+$ ]]; then
+                    clear
+                    red "Please choose an option from 1 to $i or 'q'! Press any key to continue ..."
+                    wait_keypress
+                else
+                    ((key--))
+                    # shellcheck disable=SC1090
+                    . scripts/"${menuactions[$key]}"
+                fi
+            ;;
+        esac
+    done
+}
+
+menu_items=( "Virtual Hosts" "Backup" "Restore" "Start/Stop Services" "Check for updates" "Fix permissions" "PHP Info" "DevA Changelog" )
+menu_actions=( "hosts" "backup" "restore" "services" "updates" "permissions" "phpinfo" "changelog" )
+if [ $os == "macos" ]; then
+    menu_items+=("Brew Doctor")
+    menu_actions+=("doctor")
+fi
+build_menu "${#menu_items[@]}" "${menu_items[@]}" "${#menu_actions[@]}" "${menu_actions[@]}" "M A I N - M E N U"
+
+exit 0

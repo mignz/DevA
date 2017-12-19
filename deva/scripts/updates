@@ -1,0 +1,83 @@
+#!/bin/bash
+
+# DevA - Web Development Environment
+# Created by Miguel Nunes
+# https://github.com/mignz/DevA
+
+# ------------------------------------------------------------------------------
+
+# Helpers
+
+function pad {
+    v=${1//,}
+    l=$((15-${#v}))
+    printf "$v%-${l}s"
+}
+
+# ------------------------------------------------------------------------------
+
+# Check for DevA updates
+
+clear
+yellow "Checking for DevA updates ..."
+last=$(get "update.txt")
+# shellcheck disable=SC2154
+if [ "$last" -gt "$this_update" ]; then
+    if dialog --clear \
+        --title "Auto Update?" \
+        --backtitle "DevA Update" \
+        --yesno "There is a new DevA update available!\nWould you like to install it now?" \
+        7 60; then
+        clear
+        rand=$(randstring)
+        get "update" ~/"deva_update_$rand"
+        /bin/bash ~/"deva_update_$rand"
+        exit 0
+    fi
+fi
+
+# ------------------------------------------------------------------------------
+
+# Update homebrew
+
+clear
+# shellcheck disable=SC2154
+if [ "$os" == "macos" ]; then
+    yellow "Checking for Homebrew package updates ..."
+    brew update
+    clear
+fi
+
+# ------------------------------------------------------------------------------
+
+# Check for package updates
+
+menu_header "DevA > Updates" "C H E C K - F O R - U P D A T E S"
+if [ "$os" == "macos" ]; then
+    yellow "  This will not install package updates. Do that with the following command:\n  $(blue "$ brew update && brew upgrade && brew cleanup")\n"
+    pkg_sql=mysql
+    ver_composer=$(vcurrent composer)
+    pkg_node=node
+    # shellcheck disable=SC2154
+    phalcon=$phpversion-phalcon
+else
+    yellow "  This will not install package updates. Do that with the following command:\n  $(blue "$ sudo apt-get update && sudo apt-get dist-upgrade")\n"
+    pkg_sql=mysql-server
+    ver_composer=$(composer --version | cut -d " " -f 3)
+    pkg_node=nodejs
+    phalcon=php-phalcon
+fi
+echo "  +-----------------------+-----------------+-----------------+"
+echo "  | $(blue "Package name")          | $(blue "Your version")    | $(blue "Lastest version") |"
+echo "  +-----------------------+-----------------+-----------------+"
+echo "  | Nginx                 | $(pad "$(vcurrent nginx)") | $(pad "$(vlast nginx)") |"
+echo "  | PHP                   | $(pad "$(vcurrent "$phpversion")") | $(pad "$(vlast "$phpversion")") |"
+echo "  | MySQL                 | $(pad "$(vcurrent $pkg_sql)") | $(pad "$(vlast $pkg_sql)") |"
+echo "  | Phalcon               | $(pad "$(vcurrent $phalcon)") | $(pad "$(vlast $phalcon)") |"
+echo "  | NodeJS                | $(pad "$(vcurrent $pkg_node)") | $(pad "$(vlast $pkg_node)") |"
+echo "  | MongoDB               | $(pad "$(vcurrent mongodb)") | $(pad "$(vlast mongodb)") |"
+echo "  | Composer              | $(pad "$ver_composer") | $(pad "$(vlast composer)") |"
+echo "  +-----------------------+-----------------+-----------------+"
+green "\n  Your DevA installation is currently the latest version!"
+echo -e -n "  \033[1mPress any key to go back ...\033[0;27m"
+wait_keypress
