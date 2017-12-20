@@ -26,7 +26,7 @@ if [ "$last" -gt "$this_update" ]; then
     if dialog --clear \
         --title "Auto Update?" \
         --backtitle "DevA Update" \
-        --yesno "There is a new DevA update available!\nWould you like to install it now?" \
+        --yesno "There is a new DevA update available!\\nWould you like to install it now?" \
         7 60; then
         clear
         rand=$(randstring)
@@ -54,14 +54,14 @@ fi
 
 menu_header "DevA > Updates" "C H E C K - F O R - U P D A T E S"
 if [ "$os" == "macos" ]; then
-    yellow "  This will not install package updates. Do that with the following command:\n  $(blue "$ brew update && brew upgrade && brew cleanup")\n"
+    yellow "  This will not install package updates. Do that with the following command:\\n  $(blue "$ brew update && brew upgrade && brew cleanup")\\n"
     pkg_sql=mysql
     ver_composer=$(vcurrent composer)
     pkg_node=node
     # shellcheck disable=SC2154
     phalcon=$phpversion-phalcon
 else
-    yellow "  This will not install package updates. Do that with the following command:\n  $(blue "$ sudo apt-get update && sudo apt-get dist-upgrade")\n"
+    yellow "  This will not install package updates. Do that with the following command:\\n  $(blue "$ sudo apt-get update && sudo apt-get dist-upgrade")\\n"
     pkg_sql=mysql-server
     ver_composer=$(composer --version | cut -d " " -f 3)
     pkg_node=nodejs
@@ -78,6 +78,6 @@ echo "  | NodeJS                | $(pad "$(vcurrent $pkg_node)") | $(pad "$(vlas
 echo "  | MongoDB               | $(pad "$(vcurrent mongodb)") | $(pad "$(vlast mongodb)") |"
 echo "  | Composer              | $(pad "$ver_composer") | $(pad "$(vlast composer)") |"
 echo "  +-----------------------+-----------------+-----------------+"
-green "\n  Your DevA installation is currently the latest version!"
-echo -e -n "  \033[1mPress any key to go back ...\033[0;27m"
+green "\\n  Your DevA installation is currently the latest version!"
+echo -e -n "  \\033[1mPress any key to go back ...\\033[0;27m"
 wait_keypress

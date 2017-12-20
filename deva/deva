@@ -16,19 +16,19 @@ this_update=9
 # Text colors
 
 function red {
-    echo -e "\033[91m$1\033[39m"
+    echo -e "\\033[91m$1\\033[39m"
 }
 
 function green {
-    echo -e "\033[92m$1\033[39m"
+    echo -e "\\033[92m$1\\033[39m"
 }
 
 function blue {
-    echo -e "\033[94m$1\033[39m"
+    echo -e "\\033[94m$1\\033[39m"
 }
 
 function yellow {
-    echo -e "\033[33m$1\033[39m"
+    echo -e "\\033[33m$1\\033[39m"
 }
 
 # ------------------------------------------------------------------------------
@@ -94,10 +94,10 @@ function vlast {
 
 function get {
     data=$(curl -SsL "https://raw.githubusercontent.com/mignz/DevA/master/$1")
-    echo "Fetching $1 from Git repository ..."
     if [ "$#" -eq 1 ]; then
         echo "$data"
     else
+        echo "Fetching $1 from Git repository ..."
         echo "$data" > "$2"
     fi
 }
@@ -108,16 +108,16 @@ function get {
 
 function menu_header {
     clear
-    blue "\n  \033[1m$1\033[0m\n"
-    echo -e "  \033[1;7m $2 \033[0;27m\n"
+    blue "\\n  \\033[1m$1\\033[0m\\n"
+    echo -e "  \\033[1;7m $2 \\033[0;27m\\n"
 }
 
 function check_service {
     if pgrep "$1" >/dev/null 2>&1; then
-        echo -e "\033[42m\033[97m $2 \033[39m\033[49m"
+        echo -e "\\0033[42m\\033[97m $2 \\033[39m\\033[49m"
         return 0
     else
-        echo -e "\033[41m\033[97m $2 \033[39m\033[49m"
+        echo -e "\\033[41m\\033[97m $2 \\033[39m\\033[49m"
         return 1
     fi
 }
@@ -141,9 +141,9 @@ function build_menu {
             ((i++))
             echo "  $i. $item"
         done
-        echo -e "\n  q. Exit"
-        echo -e "\n  $(check_service nginx WEB) $(check_service php-fpm PHP) $(check_service mysql SQL) $(check_service mongod MONGO)"
-        echo -e -n "\n  \033[1mEnter your choice [1-$i/q]\033[0;27m "
+        echo -e "\\n  q. Exit"
+        echo -e "\\n  $(check_service nginx WEB) $(check_service php-fpm PHP) $(check_service mysql SQL) $(check_service mongod MONGO)"
+        echo -e -n "\\n  \\033[1mEnter your choice [1-$i/q]\\033[0;27m "
         read -r -s -n1 key
         clear
         case $key in

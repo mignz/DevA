@@ -24,7 +24,7 @@ function replace {
 while :
 do
     menu_header "DevA > Virtual Hosts" "H O S T S - M A N A G E R"
-    yellow "  Active hosts:\n"
+    yellow "  Active hosts:\\n"
     i=0
     # shellcheck disable=SC2154
     for f in $path_etc/nginx/deva/vhosts/*.conf
@@ -39,7 +39,7 @@ do
     if [ $i -eq 0 ]; then
         error "Error! No vhosts found in $path_etc/nginx/deva/vhosts!"
     fi
-    echo -e -n "\n  \033[1mEnter your choice [a/e/r/d/b]\033[0;27m "
+    echo -e -n "\\n  \\033[1mEnter your choice [a/e/r/d/b]\\033[0;27m "
     read -r -s -n1 key
     clear
     # shellcheck disable=SC1091

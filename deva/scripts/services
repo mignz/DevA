@@ -12,7 +12,7 @@ function check_ports {
     for port in "$@"
     do
         if nc -zv 127.0.0.1 "$port" 2>&1 | grep "found 1 connections" &> /dev/null; then
-            error "Port $1 is being used. Find what's using it, stop that service and prevent it\nfrom starting again."
+            error "Port $1 is being used. Find what's using it, stop that service and prevent it\\nfrom starting again."
         fi
     done
 }
@@ -52,7 +52,7 @@ else
     fi
     
     if ! check_service nginx >/dev/null 2>&1; then
-        red "Unable to start Nginx! Please see the log.\nPress any key to continue ..."
+        red "Unable to start Nginx! Please see the log.\\nPress any key to continue ..."
         wait_keypress
     fi
 fi

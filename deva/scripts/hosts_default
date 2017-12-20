@@ -16,7 +16,7 @@ do
     if [[ "$host" == ___* ]]; then
         continue
     fi
-    vhosts+=($host)
+    vhosts+=("$host")
 done
 if [ "${#vhosts[@]}" -lt 1 ]; then
     red "No virtual hosts to remove! Press any key to continue ..."
@@ -34,7 +34,7 @@ options=()
 for host in "${vhosts[@]}"
 do
     ((i++))
-    options+=($i "$host")
+    options+=("$i" "$host")
 done
 choice=$(dialog --clear \
     --title "Select Virtual Host" \
@@ -68,6 +68,6 @@ else
     dialog --clear \
         --title "Default Host Set" \
         --backtitle "DevA > Virtual Hosts > Default Virtual Host" \
-        --msgbox "The default host is set!\n\nYou can now open http://$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1') in another device to see this website." \
+        --msgbox "The default host is set!\\n\\nYou can now open http://$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1') in another device to see this website." \
         8 70
 fi

@@ -11,7 +11,7 @@
 backuploc=$(dialog --clear \
     --title "Backup Location" \
     --backtitle "DevA > Restore" \
-    --inputbox "Where is the .tar backup file located?\n\nWhat will be restored:\n- Website files\n- MySQL databases\n- Nginx host files\n- Hosts file entries" \
+    --inputbox "Where is the .tar backup file located?\\n\\nWhat will be restored:\\n- Website files\\n- MySQL databases\\n- Nginx host files\\n- Hosts file entries" \
     14 70 \
     ~/ \
     3>&1 1>&2 2>&3 3>&-)
@@ -20,7 +20,7 @@ backuploc=$(dialog --clear \
 clear
 # shellcheck disable=SC2154
 if [ "$(ls -A "$(cat "$path_etc/nginx/deva/deva_www")")" ]; then
-    red "The websites directory is not empty! It must be for the restore process to\ncomplete. Make sure there are no hidden files.\n\nDirectory: $(cat "$path_etc/nginx/deva/deva_www")\n\nPress any key to continue ..."
+    red "The websites directory is not empty! It must be for the restore process to\\ncomplete. Make sure there are no hidden files.\\n\\nDirectory: $(cat "$path_etc/nginx/deva/deva_www")\\n\\nPress any key to continue ..."
     wait_keypress
     # shellcheck disable=SC2105
     continue
@@ -101,7 +101,7 @@ for f in $path_etc/nginx/deva/vhosts/*
 do
     vhostname="$(basename "${f/___/}" .conf)"
     if ! grep -q "$vhostname" "/etc/hosts"; then
-        echo -e "127.0.0.1\t$vhostname" | sudo tee -a /etc/hosts
+        echo -e "127.0.0.1\\t$vhostname" | sudo tee -a /etc/hosts
     fi
 done
 
@@ -112,5 +112,5 @@ done
 dialog --clear \
     --title "Complete!" \
     --backtitle "DevA > Restore" \
-    --msgbox "Restore process complete!\nMake sure that all website files are present in the directory:\n\n> $(cat "$path_etc/nginx/deva/deva_www")\n\nAnd that all databases are present. Also, you should now be able to open previous virtual hosts in your browser without having to modify the system hosts file." \
+    --msgbox "Restore process complete!\\nMake sure that all website files are present in the directory:\\n\\n> $(cat "$path_etc/nginx/deva/deva_www")\\n\\nAnd that all databases are present. Also, you should now be able to open previous virtual hosts in your browser without having to modify the system hosts file." \
     12 75

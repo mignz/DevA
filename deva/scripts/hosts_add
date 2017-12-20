@@ -17,7 +17,7 @@ vhost=$(dialog --clear \
     3>&1 1>&2 2>&3 3>&-)
 if [ $? -eq 1 ] || [[ "$vhost" =~ [^a-zA-Z0-9._-] ]] || [[ $vhost == '' ]] || [[ "$vhost" == ___* ]]; then
     clear
-    red "Invalid virtual host name! DevA can't use: \"$vhost\".\nPress any key to continue ..."
+    red "Invalid virtual host name! DevA can't use: \"$vhost\".\\nPress any key to continue ..."
     wait_keypress
     # shellcheck disable=SC2105
     continue
@@ -83,7 +83,7 @@ if [ $? -eq 1 ]; then
 fi
 mkdir -p "$sitepath" > /dev/null 2>&1
 if [ ! -d "$sitepath" ] || ( echo "$sitepath" | grep -q ' ' ); then
-    red "Invalid directory entered! Make sure that you have the correct permissions.\n\nPress any key to continue ..."
+    red "Invalid directory entered! Make sure that you have the correct permissions.\\n\\nPress any key to continue ..."
     wait_keypress
     # shellcheck disable=SC2105
     continue
@@ -106,7 +106,7 @@ replace "PLACEHOLDER_REWRITE" "$app" "$path_etc/nginx/deva/vhosts/$hostname.conf
 # Add virtual host to hosts file
 
 if ! grep -q "$hostname" "/etc/hosts"; then
-    echo -e "127.0.0.1\t$hostname" | sudo tee -a /etc/hosts
+    echo -e "127.0.0.1\\t$hostname" | sudo tee -a /etc/hosts
 fi
 
 # ------------------------------------------------------------------------------

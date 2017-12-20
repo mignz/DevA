@@ -11,13 +11,13 @@
 # shellcheck disable=SC2154
 if [ ! -f "$path_etc/nginx/deva/vhosts/___localhost.conf" ]; then
     clear
-    red "localhost must be the default host for phpinfo() to work.\nPress any key to continue ..."
+    red "localhost must be the default host for phpinfo() to work.\\nPress any key to continue ..."
     wait_keypress
     return
 fi
 if ! check_service "nginx" || ! check_service "php-fpm"; then
     clear
-    red "Both Nginx and PHP services must be running to show phpinfo().\nPress any key to continue ..."
+    red "Both Nginx and PHP services must be running to show phpinfo().\\nPress any key to continue ..."
     wait_keypress
     return
 fi

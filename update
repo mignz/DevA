@@ -9,11 +9,11 @@
 # Text colors
 
 function red {
-    echo -e "\033[91m$1\033[39m"
+    echo -e "\\033[91m$1\\033[39m"
 }
 
 function green {
-    echo -e "\033[92m$1\033[39m"
+    echo -e "\\033[92m$1\\033[39m"
 }
 
 # ------------------------------------------------------------------------------
@@ -45,7 +45,7 @@ if [ ! "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-if [ ! -f /usr/local/etc/nginx/deva.conf ]; then
+if [ ! -f /usr/local/etc/nginx/deva/deva.conf ] && [ ! -f /etc/nginx/deva/deva.conf ]; then
     red "DevA not installed!"
     exit 1
 fi
@@ -102,7 +102,7 @@ function __1 {
     brew services restart php71
     brew services start mongodb
     /usr/local/bin/mongo admin --eval "db.createUser({user:'root',pwd:'root',roles:['root']})"
-    echo -e "security:\n  authorization: enabled" >> "/usr/local/etc/mongod.conf"
+    echo -e "security:\\n  authorization: enabled" >> "/usr/local/etc/mongod.conf"
     brew services stop mongodb
 }
 
@@ -209,10 +209,19 @@ function __8 {
 
 function __9 {
     get "deva/deva" "/usr/local/DevA/deva"
+    get "deva/scripts/backup" "/usr/local/DevA/scripts/backup"
+    get "deva/scripts/changelog" "/usr/local/DevA/scripts/changelog"
     get "deva/scripts/doctor" "/usr/local/DevA/scripts/doctor"
     get "deva/scripts/hosts" "/usr/local/DevA/scripts/hosts"
+    get "deva/scripts/hosts_add" "/usr/local/DevA/scripts/hosts_add"
+    get "deva/scripts/hosts_default" "/usr/local/DevA/scripts/hosts_default"
+    get "deva/scripts/hosts_edit" "/usr/local/DevA/scripts/hosts_edit"
+    get "deva/scripts/hosts_remove" "/usr/local/DevA/scripts/hosts_remove"
     get "deva/scripts/permissions" "/usr/local/DevA/scripts/permissions"
+    get "deva/scripts/phpinfo" "/usr/local/DevA/scripts/phpinfo"
+    get "deva/scripts/restore" "/usr/local/DevA/scripts/restore"
     get "deva/scripts/services" "/usr/local/DevA/scripts/services"
+    get "deva/scripts/updates" "/usr/local/DevA/scripts/updates"
 }
 
 # ------------------------------------------------------------------------------
@@ -229,7 +238,7 @@ if [ "$cv" -eq "$lv" ]; then
 fi
 
 clear
-echo -e "This will update DevA from Update $cv to Update $lv.\n\nPress ENTER to continue ..."
+echo -e "This will update DevA from Update $cv to Update $lv.\\n\\nPress ENTER to continue ..."
 read -r
 
 for ((i=cv+1; i < lv + 1; i++))

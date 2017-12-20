@@ -11,7 +11,7 @@
 dialog --clear \
     --title "Backup Notice" \
     --backtitle "DevA > Backup" \
-    --yesno "For the entire backup and restore process to work without issues you should update every package and DevA to their latest versions. When you restore this backup, the installed packages will be the same version.\n\nTo check for updates, select 'No' and go to the action 'Check for updates'." \
+    --yesno "For the entire backup and restore process to work without issues you should update every package and DevA to their latest versions. When you restore this backup, the installed packages will be the same version.\\n\\nTo check for updates, select 'No' and go to the action 'Check for updates'." \
     11 70
 # shellcheck disable=SC2105
 [ $? -eq 1 ] && continue
@@ -30,7 +30,7 @@ fi
 backuploc=$(dialog --clear \
     --title "Backup Location" \
     --backtitle "DevA > Backup" \
-    --inputbox "Where should the backup file go?\n\nWhat will be saved:\n- Website Files inside $(cat "$path_etc/nginx/deva/deva_www")\n- MySQL databases\n- MongoDB databases\n- Nginx host files\n\nMake sure the file ends with the \".tar\" extension:" \
+    --inputbox "Where should the backup file go?\\n\\nWhat will be saved:\\n- Website Files inside $(cat "$path_etc/nginx/deva/deva_www")\\n- MySQL databases\\n- MongoDB databases\\n- Nginx host files\\n\\nMake sure the file ends with the \".tar\" extension:" \
     16 70 \
     "$defpath/DevA-Backup-$(date +%Y%m%d).tar" \
     3>&1 1>&2 2>&3 3>&-)
@@ -95,7 +95,7 @@ cd "$path_etc/nginx/deva/vhosts" && tar zcf ~/deva_backup_nginx.tar.gz . &
 # Create backup token
 
 # shellcheck disable=SC2154
-echo -e "Confirmation that this backup file was created by DevA (Release: $this_update)\n\nDate: $(date).\n\nNginx: $(vcurrent nginx)\nPHP: $(vcurrent "$phpversion")\nPhalcon: $(vcurrent $phalcon)\nMySQL: $ver_sql\nNode: $(vcurrent $node_pkg)\nMongoDB: $(vcurrent mongodb)\nComposer: $ver_composer" > ~/deva_backup_token.txt &
+echo -e "Confirmation that this backup file was created by DevA (Release: $this_update)\\n\\nDate: $(date).\\n\\nNginx: $(vcurrent nginx)\\nPHP: $(vcurrent "$phpversion")\\nPhalcon: $(vcurrent $phalcon)\\nMySQL: $ver_sql\\nNode: $(vcurrent $node_pkg)\\nMongoDB: $(vcurrent mongodb)\\nComposer: $ver_composer" > ~/deva_backup_token.txt &
 wait
 
 # ------------------------------------------------------------------------------
@@ -132,5 +132,5 @@ fi
 dialog --clear \
     --title "Complete!" \
     --backtitle "DevA > Backup" \
-    --msgbox "Backup complete!\n\nHere's an MD5 hash of the backup file. You should take note of it and confirm before restoring.\n\n$md5sum" \
+    --msgbox "Backup complete!\\n\\nHere's an MD5 hash of the backup file. You should take note of it and confirm before restoring.\\n\\n$md5sum" \
     10 70

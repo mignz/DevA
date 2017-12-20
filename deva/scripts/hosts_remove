@@ -17,7 +17,7 @@ do
     if [ "$host" == "localhost" ]; then
         continue
     fi
-    vhosts+=($host)
+    vhosts+=("$host")
 done
 if [ "${#vhosts[@]}" -lt 1 ]; then
     red "No virtual hosts to remove! Press any key to continue ..."
@@ -35,7 +35,7 @@ options=()
 for host in "${vhosts[@]}"
 do
     ((i++))
-    options+=($i "$host")
+    options+=("$i" "$host")
 done
 choice=$(dialog --clear \
     --title "Select Virtual Host" \

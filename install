@@ -9,7 +9,7 @@
 # Text colors
 
 function red {
-    echo -e "\033[91m$1\033[39m"
+    echo -e "\\033[91m$1\\033[39m"
 }
 
 # ------------------------------------------------------------------------------
@@ -94,15 +94,15 @@ function prompt_smtp {
         smtppass=$DEVA_SMTP_PASS
     else
         smtp=$(dialog --title "Configure Mail" --backtitle "DevA Installation" \
-        --form "\nEnter a valid SMTP account so the phpmail works on localhost:" 12 60 3 \
+        --form "\\nEnter a valid SMTP account so the phpmail works on localhost:" 12 60 3 \
         "SMTP Domain:" 1 1 "" 1 25 25 30 \
         "SMTP Username:" 2 1 "" 2 25 25 30 \
         "SMTP Password:" 3 1 "" 3 25 25 30 3>&1 1>&2 2>&3 3>&-)
         if [ $? -eq 1 ]; then
             clear
-            error "Sorry, the SMTP account is required!\nYou can use your Gmail account, for example..."
+            error "Sorry, the SMTP account is required!\\nYou can use your Gmail account, for example..."
         fi
-        smtparr=($smtp)
+        smtparr=("$smtp")
         smtphost=${smtparr[0]}
         smtpmail=${smtparr[1]}
         smtppass=${smtparr[2]}
@@ -118,7 +118,7 @@ function prompt_smtp {
 # Checks
 
 function check_network {
-    if ! echo -e "GET http://google.com HTTP/1.0\n\n" | nc google.com 80 > /dev/null 2>&1; then
+    if ! echo -e "GET http://google.com HTTP/1.0\\n\\n" | nc google.com 80 > /dev/null 2>&1; then
         error "Network connection required for installation!"
     fi
 }
@@ -196,7 +196,7 @@ if [ $os == "macos" ]; then
     replace 'post_max_size = 8M' 'post_max_size = 1G' $path_php/php.ini
     replace ';session.save_path = "/tmp"' 'session.save_path = "/usr/local/var/tmp"' $path_php/php.ini
     replace 'disable_functions =' 'disable_functions = exec,pcntl_exec,system,proc_nice,popen,pclose,curl_multi_exec,parse_ini_file,ini_get_all,ini_restore,show_source,eval,assert,dl,apache_note,apache_setenv,closelog,debugger_off,debugger_on,define_syslog_variables,openlog,syslog,url_exec,inject_code,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,posix_kill,posix_mkfifo,posix_setpgid,posix_setsid,posix_setuid,posix_uname,xmlrpc_entity_decode,pcntl_alarm,pcntl_fork,pcntl_waitpid,pcntl_wait,pcntl_wifexited,pcntl_wifstopped,pcntl_wifsignaled,pcntl_wexitstatus,pcntl_wtermsig,pcntl_wstopsig,pcntl_signal,pcntl_signal_dispatch,pcntl_get_last_error,pcntl_strerror,pcntl_sigprocmask,pcntl_sigwaitinfo,pcntl_sigtimedwait,pcntl_getpriority,pcntl_setpriority,opcache_get_status' $path_php/php.ini
-    echo -e "\n; Xdebug configuration for DevA\nxdebug.var_display_max_depth = -1\nxdebug.var_display_max_children = -1\nxdebug.var_display_max_data = -1" | tee -a $path_php/php.ini
+    echo -e "\\n; Xdebug configuration for DevA\\nxdebug.var_display_max_depth = -1\\nxdebug.var_display_max_children = -1\\nxdebug.var_display_max_data = -1" | tee -a $path_php/php.ini
     
     # 5. Nginx
     
@@ -228,7 +228,7 @@ if [ $os == "macos" ]; then
     
     sudo mkdir -p /usr/local/phalcondevtools
     sudo chown "$(whoami)":admin /usr/local/phalcondevtools
-    echo -e "{\n    \"require-dev\": {\n        \"phalcon/devtools\": \"$phalcon_devtools\"\n    }\n}" > /usr/local/phalcondevtools/composer.json
+    echo -e "{\\n    \"require-dev\": {\\n        \"phalcon/devtools\": \"$phalcon_devtools\"\\n    }\\n}" > /usr/local/phalcondevtools/composer.json
     cd /usr/local/phalcondevtools && composer install
     chmod +x /usr/local/phalcondevtools/vendor/phalcon/devtools/phalcon.sh
     /usr/local/phalcondevtools/vendor/phalcon/devtools/phalcon.sh
@@ -237,13 +237,13 @@ if [ $os == "macos" ]; then
     
     brew services start mongodb
     mongo admin --eval "db.createUser({user:'root',pwd:'root',roles:['root']})"
-    echo -e "security:\n  authorization: enabled" | sudo tee -a "$path_etc/mongod.conf"
+    echo -e "security:\\n  authorization: enabled" | sudo tee -a "$path_etc/mongod.conf"
     
     # 9. Configure postfix
     
     sudo postfix start
     prompt_smtp
-    echo -e "# DevA Test SMTP Connection\n#\nrelayhost = [$smtphost]:587\nsmtp_sasl_auth_enable = yes\nsmtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd\nsmtp_sasl_security_options = noanonymous\nsmtp_tls_CAfile = $path_nginx/ssl/nginx.crt\nsmtp_use_tls = yes" | sudo tee -a /etc/postfix/main.cf
+    echo -e "# DevA Test SMTP Connection\\n#\\nrelayhost = [$smtphost]:587\\nsmtp_sasl_auth_enable = yes\\nsmtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd\\nsmtp_sasl_security_options = noanonymous\\nsmtp_tls_CAfile = $path_nginx/ssl/nginx.crt\\nsmtp_use_tls = yes" | sudo tee -a /etc/postfix/main.cf
     echo -e "[$smtphost]:587 $smtpmail:$smtppass" | sudo tee /etc/postfix/sasl_passwd
     sudo chmod 400 /etc/postfix/sasl_passwd
     sudo postmap /etc/postfix/sasl_passwd
@@ -356,7 +356,7 @@ else
     replace 'post_max_size = 8M' 'post_max_size = 1G' $path_php/php.ini
     replace ';session.save_path = "/tmp"' 'session.save_path = "/usr/local/var/tmp"' $path_php/php.ini
     replace 'disable_functions =' 'disable_functions = exec,pcntl_exec,system,proc_nice,popen,pclose,curl_multi_exec,parse_ini_file,ini_get_all,ini_restore,show_source,eval,assert,dl,apache_note,apache_setenv,closelog,debugger_off,debugger_on,define_syslog_variables,openlog,syslog,url_exec,inject_code,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,posix_kill,posix_mkfifo,posix_setpgid,posix_setsid,posix_setuid,posix_uname,xmlrpc_entity_decode,pcntl_alarm,pcntl_fork,pcntl_waitpid,pcntl_wait,pcntl_wifexited,pcntl_wifstopped,pcntl_wifsignaled,pcntl_wexitstatus,pcntl_wtermsig,pcntl_wstopsig,pcntl_signal,pcntl_signal_dispatch,pcntl_get_last_error,pcntl_strerror,pcntl_sigprocmask,pcntl_sigwaitinfo,pcntl_sigtimedwait,pcntl_getpriority,pcntl_setpriority,opcache_get_status' $path_php/php.ini
-    echo -e "\n; Xdebug configuration for DevA\nxdebug.var_display_max_depth = -1\nxdebug.var_display_max_children = -1\nxdebug.var_display_max_data = -1" | sudo tee -a $path_php/php.ini
+    echo -e "\\n; Xdebug configuration for DevA\\nxdebug.var_display_max_depth = -1\\nxdebug.var_display_max_children = -1\\nxdebug.var_display_max_data = -1" | sudo tee -a $path_php/php.ini
     sudo service $phpversion-fpm stop
     
     # 5. Nginx
@@ -392,7 +392,7 @@ else
     
     sudo mkdir -p /usr/local/phalcondevtools
     sudo chown "$(whoami)":"$(whoami)" /usr/local/phalcondevtools
-    echo -e "{\n    \"require-dev\": {\n        \"phalcon/devtools\": \"$phalcon_devtools\"\n    }\n}" > /usr/local/phalcondevtools/composer.json
+    echo -e "{\\n    \"require-dev\": {\\n        \"phalcon/devtools\": \"$phalcon_devtools\"\\n    }\\n}" > /usr/local/phalcondevtools/composer.json
     cd /usr/local/phalcondevtools && composer install
     chmod +x /usr/local/phalcondevtools/vendor/phalcon/devtools/phalcon.sh
     /usr/local/phalcondevtools/vendor/phalcon/devtools/phalcon.sh
@@ -401,7 +401,7 @@ else
     
     sudo service mongodb start
     mongo admin --eval "db.createUser({user:'root',pwd:'root',roles:['root']})"
-    echo -e "security:\n  authorization: enabled" | sudo tee -a "$path_etc/mongod.conf"
+    echo -e "security:\\n  authorization: enabled" | sudo tee -a "$path_etc/mongod.conf"
     sudo service mongodb stop
     
     # 9. Configure postfix
@@ -411,7 +411,7 @@ else
     sudo debconf-set-selections <<< "postfix postfix/main_mailer_type string 'Internet Site'"
     sudo apt-get install -y postfix
     replace "relayhost =" "#relayhost =" /etc/postfix/main.cf
-    echo -e "\n# DevA Test SMTP Connection\nrelayhost = [$smtphost]:587\nsmtp_sasl_auth_enable = yes\nsmtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd\nsmtp_sasl_security_options = noanonymous\nsmtp_tls_CAfile = $path_nginx/ssl/nginx.crt\nsmtp_use_tls = yes" | sudo tee -a /etc/postfix/main.cf
+    echo -e "\\n# DevA Test SMTP Connection\\nrelayhost = [$smtphost]:587\\nsmtp_sasl_auth_enable = yes\\nsmtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd\\nsmtp_sasl_security_options = noanonymous\\nsmtp_tls_CAfile = $path_nginx/ssl/nginx.crt\\nsmtp_use_tls = yes" | sudo tee -a /etc/postfix/main.cf
     echo -e "[$smtphost]:587 $smtpmail:$smtppass" | sudo tee /etc/postfix/sasl_passwd
     sudo chmod 400 /etc/postfix/sasl_passwd
     sudo postmap /etc/postfix/sasl_passwd
@@ -466,7 +466,7 @@ sudo chmod -R +x /usr/local/DevA
 
 # Show finish message
 
-dialog --colors --title "Setup complete!" --backtitle "DevA Installation" --msgbox "A control panel has been installed in the system.\nTo use it, type the following command in the Terminal:\n\n\Z6$(whoami)@$HOSTNAME ~ $ \Z0dev\n\nThis control panel allows you to manage virtual hosts, backup/restore websites, manage services and check for updates.\n\nYou can try opening http://localhost or https://localhost in the browser now." 14 70
+dialog --colors --title "Setup complete!" --backtitle "DevA Installation" --msgbox "A control panel has been installed in the system.\\nTo use it, type the following command in the Terminal:\\n\\n\\Z6$(whoami)@$HOSTNAME ~ $ \\Z0dev\\n\\nThis control panel allows you to manage virtual hosts, backup/restore websites, manage services and check for updates.\\n\\nYou can try opening http://localhost or https://localhost in the browser now." 14 70
 clear
 
 rm -f "$0"
