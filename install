@@ -164,7 +164,6 @@ if [ $os == "macos" ]; then
     brew install \
         $phpversion \
         $phpversion-gmp \
-        $phpversion-intl \
         $phpversion-mcrypt \
         $phpversion-opcache \
         $phpversion-phalcon \
@@ -249,7 +248,7 @@ if [ $os == "macos" ]; then
     sudo chmod 400 /etc/postfix/sasl_passwd
     sudo postmap /etc/postfix/sasl_passwd
     sudo postfix reload
-    get "conf/postfix/org.postfix.master.plist" "/Library/LaunchDaemons/org.postfix.master.plist"
+    get "conf/postfix/org.postfix.master.plist" "/Library/LaunchDaemons/org.postfix.master.plist" --sudo
     
     # 10. Add entries to PATH
     
@@ -324,7 +323,6 @@ else
         $phpversion-xml \
         $phpversion-xmlrpc \
         $phpversion-zip \
-        php-apcu \
         php-imagick \
         php-xdebug \
         nginx \
