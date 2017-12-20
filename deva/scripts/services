@@ -43,12 +43,12 @@ else
         sudo brew services start nginx
         brew services start "$phpversion"
         brew services start mysql
-        brew services start mongodb
+        #brew services start mongodb
     else
         sudo service nginx start
         sudo service "$phpversion-fpm" start
         sudo service mysql start
-        sudo service mongodb start
+        #sudo service mongodb start
     fi
     
     if ! check_service nginx >/dev/null 2>&1; then

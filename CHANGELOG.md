@@ -1,5 +1,9 @@
 # Changelog
 
+## Update 9, 19th of December 2017
+
+* Bug fixes
+
 ## Update 8, 18th of December 2017
 
 * Rebuilt DevA — now public

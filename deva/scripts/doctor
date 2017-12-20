@@ -15,5 +15,5 @@ blue "You should follow the instructions to fix these issues and\nthen run \"$ b
 brew doctor
 yellow "\n--- BREW DOCTOR OUTPUT ABOVE"
 yellow "-------------------------------------\n"
-echo -e -n "  \033[1mPress any key to continue ...\033[0;27m"
+echo -e -n "\033[1mPress any key to continue ...\033[0;27m"
 wait_keypress

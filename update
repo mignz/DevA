@@ -162,42 +162,57 @@ function __7 {
 
 function __8 {
     sudo mkdir -p /usr/local/DevA/scripts
-    get "deva/deva" "/usr/local/DevA/deva" --sudo
-    get "deva/scripts/backup" "/usr/local/DevA/scripts/backup" --sudo
-    get "deva/scripts/changelog" "/usr/local/DevA/scripts/changelog" --sudo
-    get "deva/scripts/doctor" "/usr/local/DevA/scripts/doctor" --sudo
-    get "deva/scripts/hosts" "/usr/local/DevA/scripts/hosts" --sudo
-    get "deva/scripts/hosts_add" "/usr/local/DevA/scripts/hosts_add" --sudo
-    get "deva/scripts/hosts_default" "/usr/local/DevA/scripts/hosts_default" --sudo
-    get "deva/scripts/hosts_edit" "/usr/local/DevA/scripts/hosts_edit" --sudo
-    get "deva/scripts/hosts_remove" "/usr/local/DevA/scripts/hosts_remove" --sudo
-    get "deva/scripts/permissions" "/usr/local/DevA/scripts/permissions" --sudo
-    get "deva/scripts/phpinfo" "/usr/local/DevA/scripts/phpinfo" --sudo
-    get "deva/scripts/restore" "/usr/local/DevA/scripts/restore" --sudo
-    get "deva/scripts/services" "/usr/local/DevA/scripts/services" --sudo
-    get "deva/scripts/updates" "/usr/local/DevA/scripts/updates" --sudo
+    get "deva/deva" "/usr/local/DevA/deva"
+    get "deva/scripts/backup" "/usr/local/DevA/scripts/backup"
+    get "deva/scripts/changelog" "/usr/local/DevA/scripts/changelog"
+    get "deva/scripts/doctor" "/usr/local/DevA/scripts/doctor"
+    get "deva/scripts/hosts" "/usr/local/DevA/scripts/hosts"
+    get "deva/scripts/hosts_add" "/usr/local/DevA/scripts/hosts_add"
+    get "deva/scripts/hosts_default" "/usr/local/DevA/scripts/hosts_default"
+    get "deva/scripts/hosts_edit" "/usr/local/DevA/scripts/hosts_edit"
+    get "deva/scripts/hosts_remove" "/usr/local/DevA/scripts/hosts_remove"
+    get "deva/scripts/permissions" "/usr/local/DevA/scripts/permissions"
+    get "deva/scripts/phpinfo" "/usr/local/DevA/scripts/phpinfo"
+    get "deva/scripts/restore" "/usr/local/DevA/scripts/restore"
+    get "deva/scripts/services" "/usr/local/DevA/scripts/services"
+    get "deva/scripts/updates" "/usr/local/DevA/scripts/updates"
     sudo mkdir -p /usr/local/etc/nginx/deva/vhosts
     sudo mv /usr/local/etc/nginx/deva_www /usr/local/etc/nginx/deva/deva_www
     sudo rm -rf /usr/local/etc/nginx/deva*
     sudo mv /usr/local/etc/nginx/servers/* /usr/local/etc/nginx/deva/vhosts/*
     sudo rm -rf /usr/local/etc/nginx/servers
-    get "conf/nginx/deva.conf" "/usr/local/etc/nginx/deva/deva.conf" --sudo
-    get "conf/nginx/deva.tpl" "/usr/local/etc/nginx/deva/deva.tpl" --sudo
-    get "conf/nginx/deva_404.html" "/usr/local/etc/nginx/deva/deva_404.html" --sudo
-    get "conf/nginx/deva_common.conf" "/usr/local/etc/nginx/deva/deva_common.conf" --sudo
-    get "conf/nginx/deva_html.conf" "/usr/local/etc/nginx/deva/deva_html.conf" --sudo
-    get "conf/nginx/deva_phalcon.conf" "/usr/local/etc/nginx/deva/deva_phalcon.conf" --sudo
-    get "conf/nginx/deva_php.conf" "/usr/local/etc/nginx/deva/deva_php.conf" --sudo
+    get "conf/nginx/deva.conf" "/usr/local/etc/nginx/deva/deva.conf"
+    get "conf/nginx/deva.tpl" "/usr/local/etc/nginx/deva/deva.tpl"
+    get "conf/nginx/deva_404.html" "/usr/local/etc/nginx/deva/deva_404.html"
+    get "conf/nginx/deva_common.conf" "/usr/local/etc/nginx/deva/deva_common.conf"
+    get "conf/nginx/deva_html.conf" "/usr/local/etc/nginx/deva/deva_html.conf"
+    get "conf/nginx/deva_phalcon.conf" "/usr/local/etc/nginx/deva/deva_phalcon.conf"
+    get "conf/nginx/deva_php.conf" "/usr/local/etc/nginx/deva/deva_php.conf"
+    replace "USER_PLACEHOLDER" "$(whoami)" /usr/local/etc/nginx/deva/deva.conf
+    replace "GROUP_PLACEHOLDER" "admin" /usr/local/etc/nginx/deva/deva.conf
+    replace "WWWDIR_PLACEHOLDER" "$(cat /usr/local/etc/nginx/deva/deva_www)" /usr/local/etc/nginx/deva/vhosts/___localhost.conf
+    replace "PATH_NGINX" "/usr/local/etc/nginx" /usr/local/etc/nginx/deva/deva_common.conf
+    echo "include deva/deva.conf;" | tee /usr/local/etc/nginx/nginx.conf
+    sudo chmod -R +x /usr/local/DevA
     for f in /usr/local/etc/nginx/deva/vhosts/*.conf
     do
         rep 'include deva_' 'include deva/deva_' "$f"
     done
     mysqldump -uroot --all-databases > ~/deva_update_mysql_temp.sql
+    brew services stop mariadb
     brew uninstall mariadb
     brew install mysql
     brew services start mysql
     mysql -uroot < ~/deva_update_mysql_temp.sql
     rm ~/deva_update_mysql_temp.sql
+}
+
+function __9 {
+    get "deva/deva" "/usr/local/DevA/deva"
+    get "deva/scripts/doctor" "/usr/local/DevA/scripts/doctor"
+    get "deva/scripts/hosts" "/usr/local/DevA/scripts/hosts"
+    get "deva/scripts/permissions" "/usr/local/DevA/scripts/permissions"
+    get "deva/scripts/services" "/usr/local/DevA/scripts/services"
 }
 
 # ------------------------------------------------------------------------------

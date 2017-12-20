@@ -44,10 +44,10 @@ do
     clear
     # shellcheck disable=SC1091
     case $key in
-        [a/A]) . scripts/hosts_add;;
-        [d/D]) . scripts/hosts_default;;
-        [e/E]) . scripts/hosts_edit;;
-        [r/R]) . scripts/hosts_remove;;
+        [a/A]) . /usr/local/DevA/scripts/hosts_add;;
+        [d/D]) . /usr/local/DevA/scripts/hosts_default;;
+        [e/E]) . /usr/local/DevA/scripts/hosts_edit;;
+        [r/R]) . /usr/local/DevA/scripts/hosts_remove;;
         *) break;;
     esac
 done

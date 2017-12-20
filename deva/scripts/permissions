@@ -8,6 +8,7 @@
 
 # Fix permissions
 
+yellow "Working ..."
 # shellcheck disable=SC2154
 if [ "$os" == "macos" ]; then
     sudo chown -R "$(whoami)":staff "$(cat "$path_etc/nginx/deva/deva_www")"

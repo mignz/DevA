@@ -9,7 +9,7 @@
 # Update
 
 # shellcheck disable=SC2034
-this_update=8
+this_update=9
 
 # ------------------------------------------------------------------------------
 
@@ -158,7 +158,7 @@ function build_menu {
                 else
                     ((key--))
                     # shellcheck disable=SC1090
-                    . scripts/"${menuactions[$key]}"
+                    . /usr/local/DevA/scripts/"${menuactions[$key]}"
                 fi
             ;;
         esac
