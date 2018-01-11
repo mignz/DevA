@@ -1,5 +1,9 @@
 # Changelog
 
+## Update 10, 10th of January 2018
+
+* PHP updated to version 7.2
+
 ## Update 9, 19th of December 2017
 
 * Bug fixes

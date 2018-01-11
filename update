@@ -31,9 +31,9 @@ esac
 # Paths & OS specific configuration
 
 if [ "$os" == "macos" ]; then
-    path_php=/usr/local/etc/php/7.1
+    path_php=/usr/local/etc/php/7.2
 else
-    path_php=/etc/php/7.1/fpm
+    path_php=/etc/php/7.2/fpm
 fi
 
 # ------------------------------------------------------------------------------
@@ -82,11 +82,24 @@ function updateDevaScript {
     get "deva" "/usr/local/DevA/deva"
 }
 
-function rep {
+function replace {
     if [ $os == "macos" ]; then
         sudo sed -i '' "s@$1@$2@g" "$3"
     else
         sudo sed -i "s@$1@$2@g" "$3"
+    fi
+}
+
+profile_newline=0
+function profile {
+    path_profile=~/.bash_profile
+    [ $os == "linux" ] && path_profile=~/.profile
+    if ! grep -q "$1" $path_profile; then
+        if [[ -s $path_profile ]] && [ $profile_newline -eq 0 ]; then
+            echo "" >> $path_profile
+        fi
+        echo -e "$2" >> $path_profile
+        profile_newline=1
     fi
 }
 
@@ -121,7 +134,7 @@ function __3 {
 
 function __4 {
     updateDevaScript
-    rep 'allow_url_fopen = On' 'allow_url_fopen = Off' /usr/local/etc/php/7.1/php.ini
+    replace 'allow_url_fopen = On' 'allow_url_fopen = Off' /usr/local/etc/php/7.1/php.ini
     brew install pandoc
 }
 
@@ -135,29 +148,29 @@ function __5 {
     get "conf/deva_404.html" "/usr/local/etc/nginx/deva_404.html" &
     get "conf/deva_php-fpm.conf" "/usr/local/etc/php/7.1/deva_php-fpm.conf" &
     wait
-    rep "USER_PLACEHOLDER" "$(whoami)" /usr/local/etc/nginx/deva.conf
+    replace "USER_PLACEHOLDER" "$(whoami)" /usr/local/etc/nginx/deva.conf
     if [ -f /usr/local/etc/nginx/servers/___localhost.conf ]; then
         get "conf/localhost.conf" "/usr/local/etc/nginx/servers/___localhost.conf"
-        rep "WWWDIR_PLACEHOLDER" "$(cat /usr/local/etc/nginx/deva_www)" /usr/local/etc/nginx/servers/___localhost.conf
+        replace "WWWDIR_PLACEHOLDER" "$(cat /usr/local/etc/nginx/deva_www)" /usr/local/etc/nginx/servers/___localhost.conf
     else
         get "conf/localhost.conf" "/usr/local/etc/nginx/servers/localhost.conf"
-        rep "WWWDIR_PLACEHOLDER" "$(cat /usr/local/etc/nginx/deva_www)" /usr/local/etc/nginx/servers/localhost.conf
+        replace "WWWDIR_PLACEHOLDER" "$(cat /usr/local/etc/nginx/deva_www)" /usr/local/etc/nginx/servers/localhost.conf
     fi
-    rep 'disable_functions =' 'disable_functions = exec,shell_exec,pcntl_exec,passthru,system,proc_open,proc_close,proc_terminate,proc_nice,popen,pclose,curl_multi_exec,parse_ini_file,ini_get_all,ini_restore,show_source,eval,assert,dl,apache_note,apache_setenv,closelog,debugger_off,debugger_on,define_syslog_variables,openlog,proc_get_status,syslog,url_exec,stream_select,inject_code,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,posix_kill,posix_mkfifo,posix_setpgid,posix_setsid,posix_setuid,posix_uname,xmlrpc_entity_decode,pcntl_alarm,pcntl_fork,pcntl_waitpid,pcntl_wait,pcntl_wifexited,pcntl_wifstopped,pcntl_wifsignaled,pcntl_wexitstatus,pcntl_wtermsig,pcntl_wstopsig,pcntl_signal,pcntl_signal_dispatch,pcntl_get_last_error,pcntl_strerror,pcntl_sigprocmask,pcntl_sigwaitinfo,pcntl_sigtimedwait,pcntl_getpriority,pcntl_setpriority,opcache_get_status' /usr/local/etc/php/7.1/php.ini
+    replace 'disable_functions =' 'disable_functions = exec,shell_exec,pcntl_exec,passthru,system,proc_open,proc_close,proc_terminate,proc_nice,popen,pclose,curl_multi_exec,parse_ini_file,ini_get_all,ini_restore,show_source,eval,assert,dl,apache_note,apache_setenv,closelog,debugger_off,debugger_on,define_syslog_variables,openlog,proc_get_status,syslog,url_exec,stream_select,inject_code,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,posix_kill,posix_mkfifo,posix_setpgid,posix_setsid,posix_setuid,posix_uname,xmlrpc_entity_decode,pcntl_alarm,pcntl_fork,pcntl_waitpid,pcntl_wait,pcntl_wifexited,pcntl_wifstopped,pcntl_wifsignaled,pcntl_wexitstatus,pcntl_wtermsig,pcntl_wstopsig,pcntl_signal,pcntl_signal_dispatch,pcntl_get_last_error,pcntl_strerror,pcntl_sigprocmask,pcntl_sigwaitinfo,pcntl_sigtimedwait,pcntl_getpriority,pcntl_setpriority,opcache_get_status' /usr/local/etc/php/7.1/php.ini
     rm -f /usr/local/bin/deva
 }
 
 function __6 {
     updateDevaScript
     get "conf/deva_404.html" "/usr/local/etc/nginx/deva_404.html"
-    rep 'shell_exec,' '' /usr/local/etc/php/7.1/php.ini
-    rep 'passthru,' '' /usr/local/etc/php/7.1/php.ini
-    rep 'stream_select,' '' /usr/local/etc/php/7.1/php.ini
+    replace 'shell_exec,' '' /usr/local/etc/php/7.1/php.ini
+    replace 'passthru,' '' /usr/local/etc/php/7.1/php.ini
+    replace 'stream_select,' '' /usr/local/etc/php/7.1/php.ini
 }
 
 function __7 {
     updateDevaScript
-    rep 'allow_url_fopen = Off' 'allow_url_fopen = On' "$path_php/php.ini"
+    replace 'allow_url_fopen = Off' 'allow_url_fopen = On' "$path_php/php.ini"
 }
 
 function __8 {
@@ -222,6 +235,94 @@ function __9 {
     get "deva/scripts/restore" "/usr/local/DevA/scripts/restore"
     get "deva/scripts/services" "/usr/local/DevA/scripts/services"
     get "deva/scripts/updates" "/usr/local/DevA/scripts/updates"
+}
+
+function __10 {
+    get "deva/deva" "/usr/local/DevA/deva"
+    if [ $os == "macos" ]; then
+        brew install \
+            php72 \
+            php72-gmp \
+            php72-opcache \
+            php72-phalcon \
+            php72-pspell \
+            php72-redis \
+            php72-tidy \
+            php72-xdebug
+        echo "include=$path_php/deva_php-fpm.conf" | tee "$path_php/php-fpm.conf"
+        get "conf/php/fpm-macos.conf" "$path_php/deva_php-fpm.conf"
+        replace ';cgi.fix_pathinfo=1' 'cgi.fix_pathinfo=0' $path_php/php.ini
+        replace ';opcache.enable=0' 'opcache.enable=0' $path_php/php.ini
+        replace ';opcache.enable=1' 'opcache.enable=0' $path_php/php.ini
+        replace 'allow_url_fopen = On' 'allow_url_fopen = Off' $path_php/php.ini
+        replace 'display_errors = Off' 'display_errors = On' $path_php/php.ini
+        replace 'display_startup_errors = Off' 'display_startup_errors = On' $path_php/php.ini
+        replace 'log_errors = On' 'log_errors = Off' $path_php/php.ini
+        replace ';date.timezone =' 'date.timezone = "Atlantic\/Azores"' $path_php/php.ini
+        replace 'error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT' 'error_reporting = E_ALL' $path_php/php.ini
+        replace 'upload_max_filesize = 2M' 'upload_max_filesize = 1G' $path_php/php.ini
+        replace 'post_max_size = 8M' 'post_max_size = 1G' $path_php/php.ini
+        replace ';session.save_path = "/tmp"' 'session.save_path = "/usr/local/var/tmp"' $path_php/php.ini
+        replace 'disable_functions =' 'disable_functions = exec,pcntl_exec,system,proc_nice,popen,pclose,curl_multi_exec,parse_ini_file,ini_get_all,ini_restore,show_source,eval,assert,dl,apache_note,apache_setenv,closelog,debugger_off,debugger_on,define_syslog_variables,openlog,syslog,url_exec,inject_code,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,posix_kill,posix_mkfifo,posix_setpgid,posix_setsid,posix_setuid,posix_uname,xmlrpc_entity_decode,pcntl_alarm,pcntl_fork,pcntl_waitpid,pcntl_wait,pcntl_wifexited,pcntl_wifstopped,pcntl_wifsignaled,pcntl_wexitstatus,pcntl_wtermsig,pcntl_wstopsig,pcntl_signal,pcntl_signal_dispatch,pcntl_get_last_error,pcntl_strerror,pcntl_sigprocmask,pcntl_sigwaitinfo,pcntl_sigtimedwait,pcntl_getpriority,pcntl_setpriority,opcache_get_status' $path_php/php.ini
+        echo -e "\\n; Xdebug configuration for DevA\\nxdebug.var_display_max_depth = -1\\nxdebug.var_display_max_children = -1\\nxdebug.var_display_max_data = -1" | tee -a $path_php/php.ini
+        profile "/usr/local/opt/php71/bin" "export PATH=\"/usr/local/opt/php71/bin:\$PATH\""
+        replace 'php71' 'php72' ~/.bash_profile
+        brew services stop php71
+        brew services restart php72
+        brew remove php71 php71-gmp php71-opcache php71-phalcon php71-pspell php71-redis php71-tidy php71-xdebug
+        brew cleanup
+    else
+        sudo apt-get install -y \
+            php7.2 \
+            php7.2-bcmath \
+            php7.2-bz2 \
+            php7.2-cgi \
+            php7.2-cli \
+            php7.2-curl \
+            php7.2-dev \
+            php7.2-dba \
+            php7.2-enchant \
+            php7.2-fpm \
+            php7.2-gd \
+            php7.2-gmp \
+            php7.2-imap \
+            php7.2-intl \
+            php7.2-json \
+            php7.2-mbstring \
+            php7.2-mysql \
+            php7.2-opcache \
+            php7.2-phalcon \
+            php7.2-pspell \
+            php7.2-readline \
+            php7.2-sqlite3 \
+            php7.2-tidy \
+            php7.2-xml \
+            php7.2-xmlrpc \
+            php7.2-zip \
+            php-imagick \
+            php-xdebug
+        echo "include=$path_php/deva_php-fpm.conf" | sudo tee "$path_php/php-fpm.conf"
+        get "conf/php/fpm-linux.conf" "$path_php/deva_php-fpm.conf" --sudo
+        replace ';cgi.fix_pathinfo=1' 'cgi.fix_pathinfo=0' $path_php/php.ini
+        replace ';opcache.enable=0' 'opcache.enable=0' $path_php/php.ini
+        replace ';opcache.enable=1' 'opcache.enable=0' $path_php/php.ini
+        replace 'allow_url_fopen = On' 'allow_url_fopen = Off' $path_php/php.ini
+        replace 'display_errors = Off' 'display_errors = On' $path_php/php.ini
+        replace 'display_startup_errors = Off' 'display_startup_errors = On' $path_php/php.ini
+        replace 'log_errors = On' 'log_errors = Off' $path_php/php.ini
+        replace ';date.timezone =' 'date.timezone = "Atlantic\/Azores"' $path_php/php.ini
+        replace 'error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT' 'error_reporting = E_ALL' $path_php/php.ini
+        replace 'upload_max_filesize = 2M' 'upload_max_filesize = 1G' $path_php/php.ini
+        replace 'post_max_size = 8M' 'post_max_size = 1G' $path_php/php.ini
+        replace ';session.save_path = "/tmp"' 'session.save_path = "/usr/local/var/tmp"' $path_php/php.ini
+        replace 'disable_functions =' 'disable_functions = exec,pcntl_exec,system,proc_nice,popen,pclose,curl_multi_exec,parse_ini_file,ini_get_all,ini_restore,show_source,eval,assert,dl,apache_note,apache_setenv,closelog,debugger_off,debugger_on,define_syslog_variables,openlog,syslog,url_exec,inject_code,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,posix_kill,posix_mkfifo,posix_setpgid,posix_setsid,posix_setuid,posix_uname,xmlrpc_entity_decode,pcntl_alarm,pcntl_fork,pcntl_waitpid,pcntl_wait,pcntl_wifexited,pcntl_wifstopped,pcntl_wifsignaled,pcntl_wexitstatus,pcntl_wtermsig,pcntl_wstopsig,pcntl_signal,pcntl_signal_dispatch,pcntl_get_last_error,pcntl_strerror,pcntl_sigprocmask,pcntl_sigwaitinfo,pcntl_sigtimedwait,pcntl_getpriority,pcntl_setpriority,opcache_get_status' $path_php/php.ini
+        echo -e "\\n; Xdebug configuration for DevA\\nxdebug.var_display_max_depth = -1\\nxdebug.var_display_max_children = -1\\nxdebug.var_display_max_data = -1" | sudo tee -a $path_php/php.ini
+        sudo service php7.1-fpm stop
+        sudo service php7.2-fpm restart
+        sudo apt-get purge php7.1.*
+        sudo apt-get clean
+        sudo apt-get -y autoremove
+    fi
 }
 
 # ------------------------------------------------------------------------------

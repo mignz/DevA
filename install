@@ -141,9 +141,9 @@ check_network
 if [ $os == "macos" ]; then
     # Paths & Versions
     
-    phpversion=php71
+    phpversion=php72
     phalcon_devtools=~3.2
-    path_php=/usr/local/etc/php/7.1
+    path_php=/usr/local/etc/php/7.2
     path_nginx=/usr/local/etc/nginx
     path_etc=/usr/local/etc
     
@@ -164,7 +164,6 @@ if [ $os == "macos" ]; then
     brew install \
         $phpversion \
         $phpversion-gmp \
-        $phpversion-mcrypt \
         $phpversion-opcache \
         $phpversion-phalcon \
         $phpversion-pspell \
@@ -270,9 +269,9 @@ if [ $os == "macos" ]; then
 else
     # Paths & Versions
     
-    phpversion=php7.1
+    phpversion=php7.2
     phalcon_devtools=~3.2
-    path_php=/etc/php/7.1/fpm
+    path_php=/etc/php/7.2/fpm
     path_nginx=/etc/nginx
     path_etc=/etc
     
@@ -312,7 +311,6 @@ else
         $phpversion-intl \
         $phpversion-json \
         $phpversion-mbstring \
-        $phpversion-mcrypt \
         $phpversion-mysql \
         $phpversion-opcache \
         $phpversion-phalcon \

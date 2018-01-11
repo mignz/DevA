@@ -10,7 +10,7 @@ Configures a macOS or Ubuntu machine with the required packages and services for
 ## Packages & Services Included
 
 - Nginx
-- PHP 7.1
+- PHP 7.2
 - MySQL 5.7
 - NodeJS
 - Phalcon Extension

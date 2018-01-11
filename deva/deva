@@ -9,7 +9,7 @@
 # Update
 
 # shellcheck disable=SC2034
-this_update=9
+this_update=10
 
 # ------------------------------------------------------------------------------
 
@@ -47,11 +47,11 @@ esac
 
 if [ $os == "macos" ]; then
     path_etc=/usr/local/etc
-    phpversion=php71
+    phpversion=php72
 else
     # shellcheck disable=SC2034
     path_etc=/etc
-    phpversion=php7.1
+    phpversion=php7.2
 fi
 
 # ------------------------------------------------------------------------------
