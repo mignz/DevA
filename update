@@ -240,6 +240,11 @@ function __9 {
 function __10 {
     get "deva/deva" "/usr/local/DevA/deva"
     if [ $os == "macos" ]; then
+        brew unlink php71
+        brew services stop php71
+        brew remove php71-gmp php71-opcache php71-phalcon php71-pspell php71-redis php71-tidy php71-xdebug php71-memcached php71-mcrypt php71-imagick php71-igbinary
+        brew remove php71
+        rm -rf /usr/local/etc/php/7.1
         brew install \
             php72 \
             php72-gmp \
@@ -252,7 +257,6 @@ function __10 {
         echo "include=$path_php/deva_php-fpm.conf" | tee "$path_php/php-fpm.conf"
         get "conf/php/fpm-macos.conf" "$path_php/deva_php-fpm.conf"
         replace ';cgi.fix_pathinfo=1' 'cgi.fix_pathinfo=0' $path_php/php.ini
-        replace ';opcache.enable=0' 'opcache.enable=0' $path_php/php.ini
         replace ';opcache.enable=1' 'opcache.enable=0' $path_php/php.ini
         replace 'allow_url_fopen = On' 'allow_url_fopen = Off' $path_php/php.ini
         replace 'display_errors = Off' 'display_errors = On' $path_php/php.ini
@@ -267,11 +271,12 @@ function __10 {
         echo -e "\\n; Xdebug configuration for DevA\\nxdebug.var_display_max_depth = -1\\nxdebug.var_display_max_children = -1\\nxdebug.var_display_max_data = -1" | tee -a $path_php/php.ini
         profile "/usr/local/opt/php71/bin" "export PATH=\"/usr/local/opt/php71/bin:\$PATH\""
         replace 'php71' 'php72' ~/.bash_profile
-        brew services stop php71
         brew services restart php72
-        brew remove php71 php71-gmp php71-opcache php71-phalcon php71-pspell php71-redis php71-tidy php71-xdebug
         brew cleanup
     else
+        sudo service php7.1-fpm stop
+        sudo apt-get purge php7.1.*
+        rm -rf /etc/php/7.1
         sudo apt-get install -y \
             php7.2 \
             php7.2-bcmath \
@@ -317,9 +322,7 @@ function __10 {
         replace ';session.save_path = "/tmp"' 'session.save_path = "/usr/local/var/tmp"' $path_php/php.ini
         replace 'disable_functions =' 'disable_functions = exec,pcntl_exec,system,proc_nice,popen,pclose,curl_multi_exec,parse_ini_file,ini_get_all,ini_restore,show_source,eval,assert,dl,apache_note,apache_setenv,closelog,debugger_off,debugger_on,define_syslog_variables,openlog,syslog,url_exec,inject_code,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,posix_kill,posix_mkfifo,posix_setpgid,posix_setsid,posix_setuid,posix_uname,xmlrpc_entity_decode,pcntl_alarm,pcntl_fork,pcntl_waitpid,pcntl_wait,pcntl_wifexited,pcntl_wifstopped,pcntl_wifsignaled,pcntl_wexitstatus,pcntl_wtermsig,pcntl_wstopsig,pcntl_signal,pcntl_signal_dispatch,pcntl_get_last_error,pcntl_strerror,pcntl_sigprocmask,pcntl_sigwaitinfo,pcntl_sigtimedwait,pcntl_getpriority,pcntl_setpriority,opcache_get_status' $path_php/php.ini
         echo -e "\\n; Xdebug configuration for DevA\\nxdebug.var_display_max_depth = -1\\nxdebug.var_display_max_children = -1\\nxdebug.var_display_max_data = -1" | sudo tee -a $path_php/php.ini
-        sudo service php7.1-fpm stop
         sudo service php7.2-fpm restart
-        sudo apt-get purge php7.1.*
         sudo apt-get clean
         sudo apt-get -y autoremove
     fi
