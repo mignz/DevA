@@ -132,6 +132,13 @@ function check_network {
 
 # ------------------------------------------------------------------------------
 
+# Sudo "keepalive"
+
+sudo -v
+while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+
+# ------------------------------------------------------------------------------
+
 # Setup the environment
 
 echo "Working ..."
@@ -162,8 +169,9 @@ if [ $os == "macos" ]; then
     # 3. Install PHP/MySQL/Nginx
     
     brew install \
-        $phpversion \
+        $phpversion --with-argon2 \
         $phpversion-gmp \
+        $phpversion-imagick \
         $phpversion-opcache \
         $phpversion-phalcon \
         $phpversion-pspell \
@@ -194,7 +202,7 @@ if [ $os == "macos" ]; then
     replace 'upload_max_filesize = 2M' 'upload_max_filesize = 1G' $path_php/php.ini
     replace 'post_max_size = 8M' 'post_max_size = 1G' $path_php/php.ini
     replace ';session.save_path = "/tmp"' 'session.save_path = "/usr/local/var/tmp"' $path_php/php.ini
-    replace 'disable_functions =' 'disable_functions = exec,pcntl_exec,system,proc_nice,popen,pclose,curl_multi_exec,parse_ini_file,ini_get_all,ini_restore,show_source,eval,assert,dl,apache_note,apache_setenv,closelog,debugger_off,debugger_on,define_syslog_variables,openlog,syslog,url_exec,inject_code,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,posix_kill,posix_mkfifo,posix_setpgid,posix_setsid,posix_setuid,posix_uname,xmlrpc_entity_decode,pcntl_alarm,pcntl_fork,pcntl_waitpid,pcntl_wait,pcntl_wifexited,pcntl_wifstopped,pcntl_wifsignaled,pcntl_wexitstatus,pcntl_wtermsig,pcntl_wstopsig,pcntl_signal,pcntl_signal_dispatch,pcntl_get_last_error,pcntl_strerror,pcntl_sigprocmask,pcntl_sigwaitinfo,pcntl_sigtimedwait,pcntl_getpriority,pcntl_setpriority,opcache_get_status' $path_php/php.ini
+    replace 'disable_functions =' 'disable_functions = apache_child_terminate,apache_get_modules,apache_note,apache_setenv,dl,define_syslog_variables,eval,ftp_connect,ini_get_all,passthru,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,popen,proc_open,proc_close,xmlrpc_entity_decode,curl_multi_exec,parse_ini_file,show_source,pcntl_exec,php_uname' $path_php/php.ini
     echo -e "\\n; Xdebug configuration for DevA\\nxdebug.var_display_max_depth = -1\\nxdebug.var_display_max_children = -1\\nxdebug.var_display_max_data = -1" | tee -a $path_php/php.ini
     
     # 5. Nginx
@@ -353,7 +361,7 @@ else
     replace 'upload_max_filesize = 2M' 'upload_max_filesize = 1G' $path_php/php.ini
     replace 'post_max_size = 8M' 'post_max_size = 1G' $path_php/php.ini
     replace ';session.save_path = "/tmp"' 'session.save_path = "/usr/local/var/tmp"' $path_php/php.ini
-    replace 'disable_functions =' 'disable_functions = exec,pcntl_exec,system,proc_nice,popen,pclose,curl_multi_exec,parse_ini_file,ini_get_all,ini_restore,show_source,eval,assert,dl,apache_note,apache_setenv,closelog,debugger_off,debugger_on,define_syslog_variables,openlog,syslog,url_exec,inject_code,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,posix_kill,posix_mkfifo,posix_setpgid,posix_setsid,posix_setuid,posix_uname,xmlrpc_entity_decode,pcntl_alarm,pcntl_fork,pcntl_waitpid,pcntl_wait,pcntl_wifexited,pcntl_wifstopped,pcntl_wifsignaled,pcntl_wexitstatus,pcntl_wtermsig,pcntl_wstopsig,pcntl_signal,pcntl_signal_dispatch,pcntl_get_last_error,pcntl_strerror,pcntl_sigprocmask,pcntl_sigwaitinfo,pcntl_sigtimedwait,pcntl_getpriority,pcntl_setpriority,opcache_get_status' $path_php/php.ini
+    replace 'disable_functions =' 'disable_functions = apache_child_terminate,apache_get_modules,apache_note,apache_setenv,dl,define_syslog_variables,eval,ftp_connect,ini_get_all,passthru,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,popen,proc_open,proc_close,xmlrpc_entity_decode,curl_multi_exec,parse_ini_file,show_source,pcntl_exec,php_uname' $path_php/php.ini
     echo -e "\\n; Xdebug configuration for DevA\\nxdebug.var_display_max_depth = -1\\nxdebug.var_display_max_children = -1\\nxdebug.var_display_max_data = -1" | sudo tee -a $path_php/php.ini
     sudo service $phpversion-fpm stop
     

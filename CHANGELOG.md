@@ -1,5 +1,11 @@
 # Changelog
 
+## Update 11, 30th of January 2018
+
+* Revised disabled_functions in PHP, less restrictive
+* PHP now comes installed with Argon2 and Imagick on macOS
+* Install script only asks for a root password once now
+
 ## Update 10, 10th of January 2018
 
 * PHP updated to version 7.2
