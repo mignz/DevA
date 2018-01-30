@@ -132,13 +132,6 @@ function check_network {
 
 # ------------------------------------------------------------------------------
 
-# Sudo "keepalive"
-
-sudo -v
-while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
-
-# ------------------------------------------------------------------------------
-
 # Setup the environment
 
 echo "Working ..."
@@ -168,8 +161,8 @@ if [ $os == "macos" ]; then
     
     # 3. Install PHP/MySQL/Nginx
     
+    brew install $phpversion --with-argon2
     brew install \
-        $phpversion --with-argon2 \
         $phpversion-gmp \
         $phpversion-imagick \
         $phpversion-opcache \
@@ -294,6 +287,7 @@ else
     sudo add-apt-repository -y ppa:ondrej/php
     curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
     curl -s "https://packagecloud.io/install/repositories/phalcon/stable/script.deb.sh" | sudo bash
+    sudo apt-get update
     
     # 2. Install dependencies
     

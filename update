@@ -331,13 +331,13 @@ function __10 {
 function __11 {
     get "deva/deva" "/usr/local/DevA/deva"
     if [ $os == "macos" ]; then
-        sed -i '' '/disable_functions = /c\disable_functions = apache_child_terminate,apache_get_modules,apache_note,apache_setenv,dl,define_syslog_variables,eval,ftp_connect,ini_get_all,passthru,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,popen,proc_open,proc_close,xmlrpc_entity_decode,curl_multi_exec,parse_ini_file,show_source,pcntl_exec,php_uname' $path_php/php.ini
+        sed -i '' 's/disable_functions = .*/disable_functions = apache_child_terminate,apache_get_modules,apache_note,apache_setenv,dl,define_syslog_variables,eval,ftp_connect,ini_get_all,passthru,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,popen,proc_open,proc_close,xmlrpc_entity_decode,curl_multi_exec,parse_ini_file,show_source,pcntl_exec,php_uname/g' $path_php/php.ini
         brew uninstall --ignore-dependencies php72
         brew install php72 --with-argon2
         brew install php72-imagick
         brew services restart php72
     else
-        sed -i '/disable_functions = /c\disable_functions = apache_child_terminate,apache_get_modules,apache_note,apache_setenv,dl,define_syslog_variables,eval,ftp_connect,ini_get_all,passthru,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,popen,proc_open,proc_close,xmlrpc_entity_decode,curl_multi_exec,parse_ini_file,show_source,pcntl_exec,php_uname' $path_php/php.ini
+        sed -i 's/disable_functions = .*/disable_functions = apache_child_terminate,apache_get_modules,apache_note,apache_setenv,dl,define_syslog_variables,eval,ftp_connect,ini_get_all,passthru,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,popen,proc_open,proc_close,xmlrpc_entity_decode,curl_multi_exec,parse_ini_file,show_source,pcntl_exec,php_unam/g' $path_php/php.ini
         sudo service php7.2-fpm restart
     fi
 }
