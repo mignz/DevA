@@ -99,16 +99,18 @@ function prompt_smtp {
         "SMTP Username:" 2 1 "" 2 25 25 30 \
         "SMTP Password:" 3 1 "" 3 25 25 30 3>&1 1>&2 2>&3 3>&-)
         if [ $? -eq 1 ]; then
-            clear
-            error "Sorry, the SMTP account is required!\\nYou can use your Gmail account, for example..."
-        fi
-        smtparr=("$smtp")
-        smtphost=${smtparr[0]}
-        smtpmail=${smtparr[1]}
-        smtppass=${smtparr[2]}
-        clear
-        if [ -z "$smtphost" ] || [ -z "$smtpmail" ] || [ -z "$smtppass" ]; then
             prompt_smtp
+            return
+        else
+            IFS=" " read -r -a smtparr <<< "$smtp"
+            smtphost=${smtparr[0]}
+            smtpmail=${smtparr[1]}
+            smtppass=${smtparr[2]}
+            clear
+            if [ -z "$smtphost" ] || [ -z "$smtpmail" ] || [ -z "$smtppass" ]; then
+                prompt_smtp
+                return
+            fi
         fi
     fi
 }
