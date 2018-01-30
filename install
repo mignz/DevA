@@ -102,7 +102,8 @@ function prompt_smtp {
             prompt_smtp
             return
         else
-            IFS=" " read -r -a smtparr <<< "$smtp"
+            # shellcheck disable=SC2206
+            smtparr=($smtp)
             smtphost=${smtparr[0]}
             smtpmail=${smtparr[1]}
             smtppass=${smtparr[2]}
