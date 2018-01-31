@@ -357,7 +357,7 @@ function __12 {
         replace "server_name $host.dev;" "server_name $host.localhost;" "$f"
         sudo mv "$f" "$path_nginx/deva/vhosts/$host.localhost.conf"
     done
-    replace ".dev" ".localhost" "$f"
+    replace ".dev" ".localhost" /etc/hosts
     if [ $os == "macos" ]; then
         sudo brew services restart nginx
     else
