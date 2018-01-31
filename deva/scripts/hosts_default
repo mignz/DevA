@@ -68,6 +68,6 @@ else
     dialog --clear \
         --title "Default Host Set" \
         --backtitle "DevA > Virtual Hosts > Default Virtual Host" \
-        --msgbox "The default host is set!\\n\\nYou can now open http://$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1') in another device to see this website." \
+        --msgbox "The default host is set!\\n\\nYou can now open http://$(ifconfig "$(netstat -rn | grep -E "^default|^0.0.0.0" | head -1 | awk '{print $NF}')" | grep 'inet ' | awk '{print $2}' | grep -Eo '([0-9]*\.){3}[0-9]*') in another device to see this website." \
         8 70
 fi
