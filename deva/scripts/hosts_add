@@ -11,7 +11,7 @@
 vhost=$(dialog --clear \
     --title "Virtual Host Name" \
     --backtitle "DevA > Virtual Hosts > Add Virtual Host" \
-    --inputbox "Choose a name for the virtual host. Remember that .dev is appended to the host name if you don't specify it now." \
+    --inputbox "Choose a name for the virtual host. Remember that \".localhost\" is appended to the host name if you don't specify it now." \
     9 70 \
     "" \
     3>&1 1>&2 2>&3 3>&-)
@@ -25,12 +25,19 @@ fi
 
 # ------------------------------------------------------------------------------
 
+# Add .localhost if necessary
+
+hostname=${vhost%.localhost}
+hostname=$hostname.localhost
+
+# ------------------------------------------------------------------------------
+
 # Check if exists
 
 # shellcheck disable=SC2154
-if [ -f "$path_etc/nginx/deva/vhosts/$hostname.dev.conf" ]; then
+if [ -f "$path_etc/nginx/deva/vhosts/$hostname.conf" ]; then
     clear
-    red "The virtual host $hostname.dev already exists! Press any key to continue ..."
+    red "The virtual host $hostname.localhost already exists! Press any key to continue ..."
     wait_keypress
     # shellcheck disable=SC2105
     continue
@@ -61,13 +68,6 @@ esac
 
 # ------------------------------------------------------------------------------
 
-# Add .dev if necessary
-
-hostname=${vhost%.dev}
-hostname=$hostname.dev
-
-# ------------------------------------------------------------------------------
-
 # Prompt and create website path
 
 sitepath=$(dialog --clear \
@@ -75,7 +75,7 @@ sitepath=$(dialog --clear \
     --backtitle "DevA > Virtual Hosts > Add Virtual Host" \
     --inputbox "Specify the full path of the public directory to this website." \
     8 70 \
-    "$(cat "$path_etc/nginx/deva/deva_www")/${hostname%.dev}" \
+    "$(cat "$path_etc/nginx/deva/deva_www")/${hostname%.localhost}" \
     3>&1 1>&2 2>&3 3>&-)
 if [ $? -eq 1 ]; then
     # shellcheck disable=SC2105

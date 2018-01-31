@@ -342,6 +342,23 @@ function __11 {
     fi
 }
 
+function __12 {
+    get "deva/deva" "/usr/local/DevA/deva"
+    get "deva/scripts/hosts_add" "/usr/local/DevA/scripts/hosts_add"
+    get "deva/scripts/hosts_edit" "/usr/local/DevA/scripts/hosts_edit"
+    if [ $os == "macos" ]; then
+        path_nginx=/usr/local/etc/nginx
+    else
+        path_nginx=/etc/nginx
+    fi
+    for f in $path_nginx/deva/vhosts/*.dev.conf
+    do
+        host="$(basename "$f" .dev.conf)"
+        replace "server_name $host.dev;" "server_name $host.localhost;" "$f"
+        sudo mv "$f" "$path_nginx/deva/vhosts/$host.localhost.conf"
+    done
+}
+
 # ------------------------------------------------------------------------------
 
 # Run Updater

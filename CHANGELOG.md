@@ -1,5 +1,10 @@
 # Changelog
 
+## Update 12, 31st of January 2018
+
+* Fixed issue where older PHP version packages were being installed in Linux
+* Updated all TLDs from .dev to .localhost due to .dev being official now
+
 ## Update 11, 30th of January 2018
 
 * Revised disabled_functions in PHP, less restrictive
