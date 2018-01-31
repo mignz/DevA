@@ -198,7 +198,7 @@ if [ $os == "macos" ]; then
     replace 'upload_max_filesize = 2M' 'upload_max_filesize = 1G' $path_php/php.ini
     replace 'post_max_size = 8M' 'post_max_size = 1G' $path_php/php.ini
     replace ';session.save_path = "/tmp"' 'session.save_path = "/usr/local/var/tmp"' $path_php/php.ini
-    replace 'disable_functions =' 'disable_functions = apache_child_terminate,apache_get_modules,apache_note,apache_setenv,dl,define_syslog_variables,eval,ftp_connect,ini_get_all,passthru,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,popen,proc_open,proc_close,xmlrpc_entity_decode,curl_multi_exec,parse_ini_file,show_source,pcntl_exec,php_uname' $path_php/php.ini
+    replace 'disable_functions =' 'disable_functions = apache_child_terminate,apache_get_modules,apache_note,apache_setenv,dl,define_syslog_variables,eval,ftp_connect,ini_get_all,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,popen,proc_open,proc_close,xmlrpc_entity_decode,curl_multi_exec,parse_ini_file,show_source,pcntl_exec,php_uname' $path_php/php.ini
     echo -e "\\n; Xdebug configuration for DevA\\nxdebug.var_display_max_depth = -1\\nxdebug.var_display_max_children = -1\\nxdebug.var_display_max_data = -1" | tee -a $path_php/php.ini
     
     # 5. Nginx
@@ -289,13 +289,15 @@ else
     sudo apt-get install -y python-software-properties curl
     sudo add-apt-repository -y ppa:ondrej/php
     curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
-    curl -s "https://packagecloud.io/install/repositories/phalcon/stable/script.deb.sh" | sudo bash
     sudo apt-get update
     
     # 2. Install dependencies
     
     sudo apt-get install -y dialog \
-        pandoc
+        pandoc \
+        gcc \
+        libpcre3-dev \
+        git
     
     # 3. Install PHP/MySQL/Nginx
     
@@ -318,7 +320,6 @@ else
         $phpversion-mbstring \
         $phpversion-mysql \
         $phpversion-opcache \
-        $phpversion-phalcon \
         $phpversion-pspell \
         $phpversion-readline \
         $phpversion-sqlite3 \
@@ -331,6 +332,11 @@ else
         nginx \
         nodejs \
         mongodb
+    git clone --depth=1 "git://github.com/phalcon/cphalcon.git" "/home/$USER/cphalcon"
+    cd "/home/$USER/cphalcon/build" && sudo ./install
+    echo "extension=phalcon.so" | sudo tee $path_php/../mods-available/phalcon.ini
+    sudo ln -sf $path_php/../mods-available/phalcon.ini $path_php/conf.d/20-phalcon.ini
+    sudo ln -sf $path_php/../mods-available/phalcon.ini $path_php/../cli/conf.d/20-phalcon.ini
     
     # 3. MySQL
     
@@ -344,6 +350,7 @@ else
     
     # 4. PHP
     
+    sudo mkdir -p /usr/local/var/run
     echo "include=$path_php/deva_php-fpm.conf" | sudo tee "$path_php/php-fpm.conf"
     get "conf/php/fpm-linux.conf" "$path_php/deva_php-fpm.conf" --sudo
     replace ';cgi.fix_pathinfo=1' 'cgi.fix_pathinfo=0' $path_php/php.ini
@@ -358,7 +365,7 @@ else
     replace 'upload_max_filesize = 2M' 'upload_max_filesize = 1G' $path_php/php.ini
     replace 'post_max_size = 8M' 'post_max_size = 1G' $path_php/php.ini
     replace ';session.save_path = "/tmp"' 'session.save_path = "/usr/local/var/tmp"' $path_php/php.ini
-    replace 'disable_functions =' 'disable_functions = apache_child_terminate,apache_get_modules,apache_note,apache_setenv,dl,define_syslog_variables,eval,ftp_connect,ini_get_all,passthru,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,popen,proc_open,proc_close,xmlrpc_entity_decode,curl_multi_exec,parse_ini_file,show_source,pcntl_exec,php_uname' $path_php/php.ini
+    replace 'disable_functions =' 'disable_functions = apache_child_terminate,apache_get_modules,apache_note,apache_setenv,dl,define_syslog_variables,eval,ftp_connect,ini_get_all,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,popen,proc_open,proc_close,xmlrpc_entity_decode,curl_multi_exec,parse_ini_file,show_source,pcntl_exec,php_uname' $path_php/php.ini
     echo -e "\\n; Xdebug configuration for DevA\\nxdebug.var_display_max_depth = -1\\nxdebug.var_display_max_children = -1\\nxdebug.var_display_max_data = -1" | sudo tee -a $path_php/php.ini
     sudo service $phpversion-fpm stop
     

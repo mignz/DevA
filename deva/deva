@@ -80,7 +80,11 @@ function vcurrent {
     if [ $os == "macos" ]; then
         brew ls --versions "$1" | cut -d " " -f 2 | cut -d "_" -f 1
     else
-        dpkg -s "$1" | grep Version | cut -d " " -f 2 | cut -d "-" -f 1
+        if [ "$1" == "php-phalcon" ]; then
+            php -r "echo Phalcon\\Version::get();"
+        else
+            dpkg -s "$1" | grep Version | cut -d " " -f 2 | cut -d "-" -f 1 | cut -d ":" -f 2
+        fi
     fi
 }
 
@@ -88,7 +92,11 @@ function vlast {
     if [ $os == "macos" ]; then
         brew info "$1" | sed -n 1p | cut -d " " -f 3
     else
-        apt-cache policy "$1" | grep Candidate | cut -d " " -f 4 | cut -d "-" -f 1
+        if [ "$1" == "php-phalcon" ]; then
+            curl -SsL https://api.github.com/repos/phalcon/cphalcon/releases/latest | grep tag_name | cut -d ":" -f 2 | cut -d '"' -f 2 | cut -d "v" -f 2
+        else
+            apt-cache policy "$1" | grep Candidate | cut -d " " -f 4 | cut -d "-" -f 1 | cut -d ":" -f 2
+        fi
     fi
 }
 
