@@ -203,6 +203,7 @@ if [ $os == "macos" ]; then
     replace ';session.save_path = "/tmp"' 'session.save_path = "/usr/local/var/tmp"' $path_php/php.ini
     replace 'disable_functions =' 'disable_functions = apache_child_terminate,apache_get_modules,apache_note,apache_setenv,dl,define_syslog_variables,eval,ftp_connect,ini_get_all,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,popen,xmlrpc_entity_decode,curl_multi_exec,parse_ini_file,show_source,pcntl_exec,php_uname' $path_php/php.ini
     echo -e "\\n; Xdebug configuration for DevA\\nxdebug.var_display_max_depth = -1\\nxdebug.var_display_max_children = -1\\nxdebug.var_display_max_data = -1" | tee -a $path_php/php.ini
+    mkdir /usr/local/var/tmp
     
     # 5. Nginx
     
