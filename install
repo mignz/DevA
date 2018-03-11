@@ -130,8 +130,17 @@ function check_network {
 
 # Preflight Checks
 
-[ ! "$EUID" -ne 0 ] && error "Plese do NOT run as admin!"
+[ ! "$EUID" -ne 0 ] && error "Please do NOT run as the root user!"
 [ -f /usr/local/DevA/deva ] && error "DevA is already installed!"
+
+# ------------------------------------------------------------------------------
+
+# Prompt
+
+clear
+echo "This will now install DevA. Press any key to continue ..."
+read -p "" -n 1 -r
+clear
 
 # ------------------------------------------------------------------------------
 
@@ -166,13 +175,9 @@ if [ $os == "macos" ]; then
     
     brew install $phpversion --with-argon2
     brew install \
-        $phpversion-gmp \
         $phpversion-imagick \
-        $phpversion-opcache \
         $phpversion-phalcon \
-        $phpversion-pspell \
         $phpversion-redis \
-        $phpversion-tidy \
         $phpversion-xdebug \
         mysql \
         nginx \
@@ -189,7 +194,6 @@ if [ $os == "macos" ]; then
     replace ';cgi.fix_pathinfo=1' 'cgi.fix_pathinfo=0' $path_php/php.ini
     replace ';opcache.enable=0' 'opcache.enable=0' $path_php/php.ini
     replace ';opcache.enable=1' 'opcache.enable=0' $path_php/php.ini
-    replace 'allow_url_fopen = On' 'allow_url_fopen = Off' $path_php/php.ini
     replace 'display_errors = Off' 'display_errors = On' $path_php/php.ini
     replace 'display_startup_errors = Off' 'display_startup_errors = On' $path_php/php.ini
     replace 'log_errors = On' 'log_errors = Off' $path_php/php.ini
@@ -198,7 +202,7 @@ if [ $os == "macos" ]; then
     replace 'upload_max_filesize = 2M' 'upload_max_filesize = 1G' $path_php/php.ini
     replace 'post_max_size = 8M' 'post_max_size = 1G' $path_php/php.ini
     replace ';session.save_path = "/tmp"' 'session.save_path = "/usr/local/var/tmp"' $path_php/php.ini
-    replace 'disable_functions =' 'disable_functions = apache_child_terminate,apache_get_modules,apache_note,apache_setenv,dl,define_syslog_variables,eval,ftp_connect,ini_get_all,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,popen,proc_open,proc_close,xmlrpc_entity_decode,curl_multi_exec,parse_ini_file,show_source,pcntl_exec,php_uname' $path_php/php.ini
+    replace 'disable_functions =' 'disable_functions = apache_child_terminate,apache_get_modules,apache_note,apache_setenv,dl,define_syslog_variables,eval,ftp_connect,ini_get_all,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,popen,proc_close,xmlrpc_entity_decode,curl_multi_exec,parse_ini_file,show_source,pcntl_exec,php_uname' $path_php/php.ini
     echo -e "\\n; Xdebug configuration for DevA\\nxdebug.var_display_max_depth = -1\\nxdebug.var_display_max_children = -1\\nxdebug.var_display_max_data = -1" | tee -a $path_php/php.ini
     
     # 5. Nginx
@@ -335,6 +339,7 @@ else
     sudo pecl install xdebug
     git clone --depth=1 "git://github.com/phalcon/cphalcon.git" "/home/$USER/cphalcon"
     cd "/home/$USER/cphalcon/build" && sudo ./install
+    sudo rm -rf "/home/$USER/cphalcon"
     echo "extension=phalcon.so" | sudo tee $path_php/../mods-available/phalcon.ini
     echo "zend_extension=xdebug.so" | sudo tee $path_php/../mods-available/xdebug.ini
     sudo ln -sf $path_php/../mods-available/phalcon.ini $path_php/conf.d/20-phalcon.ini
@@ -360,10 +365,11 @@ else
     sudo mkdir -p /usr/local/var/run
     echo "include=$path_php/deva_php-fpm.conf" | sudo tee "$path_php/php-fpm.conf"
     get "conf/php/fpm-linux.conf" "$path_php/deva_php-fpm.conf" --sudo
+    replace "USER_PLACEHOLDER" "$(whoami)" "$path_php/deva_php-fpm.conf"
+    replace "GROUP_PLACEHOLDER" "$(whoami)" "$path_php/deva_php-fpm.conf"
     replace ';cgi.fix_pathinfo=1' 'cgi.fix_pathinfo=0' $path_php/php.ini
     replace ';opcache.enable=0' 'opcache.enable=0' $path_php/php.ini
     replace ';opcache.enable=1' 'opcache.enable=0' $path_php/php.ini
-    replace 'allow_url_fopen = On' 'allow_url_fopen = Off' $path_php/php.ini
     replace 'display_errors = Off' 'display_errors = On' $path_php/php.ini
     replace 'display_startup_errors = Off' 'display_startup_errors = On' $path_php/php.ini
     replace 'log_errors = On' 'log_errors = Off' $path_php/php.ini
@@ -372,7 +378,7 @@ else
     replace 'upload_max_filesize = 2M' 'upload_max_filesize = 1G' $path_php/php.ini
     replace 'post_max_size = 8M' 'post_max_size = 1G' $path_php/php.ini
     replace ';session.save_path = "/tmp"' 'session.save_path = "/usr/local/var/tmp"' $path_php/php.ini
-    replace 'disable_functions =' 'disable_functions = apache_child_terminate,apache_get_modules,apache_note,apache_setenv,dl,define_syslog_variables,eval,ftp_connect,ini_get_all,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,popen,proc_open,proc_close,xmlrpc_entity_decode,curl_multi_exec,parse_ini_file,show_source,pcntl_exec,php_uname' $path_php/php.ini
+    replace 'disable_functions =' 'disable_functions = apache_child_terminate,apache_get_modules,apache_note,apache_setenv,dl,define_syslog_variables,eval,ftp_connect,ini_get_all,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,popen,proc_close,xmlrpc_entity_decode,curl_multi_exec,parse_ini_file,show_source,pcntl_exec,php_uname' $path_php/php.ini
     echo -e "\\n; Xdebug configuration for DevA\\nxdebug.var_display_max_depth = -1\\nxdebug.var_display_max_children = -1\\nxdebug.var_display_max_data = -1" | sudo tee -a $path_php/php.ini
     sudo service $phpversion-fpm stop
     

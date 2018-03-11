@@ -77,6 +77,23 @@ mysql -uroot < ~/"$randomid"/deva_backup_mysql.sql
 
 # ------------------------------------------------------------------------------
 
+# Replace .dev or .localhost hosts with .test
+
+for f in $path_etc/nginx/deva/vhosts/*.localhost.conf
+do
+    host="$(basename "$f" .localhost.conf)"
+    replace "server_name $host.localhost;" "server_name $host.test;" "$f"
+    sudo mv "$f" "$path_etc/nginx/deva/vhosts/$host.test.conf"
+done
+for f in $path_etc/nginx/deva/vhosts/*.dev.conf
+do
+    host="$(basename "$f" .dev.conf)"
+    replace "server_name $host.dev;" "server_name $host.test;" "$f"
+    sudo mv "$f" "$path_etc/nginx/deva/vhosts/$host.test.conf"
+done
+
+# ------------------------------------------------------------------------------
+
 # Fix permissions and restart Nginx
 
 if [ "$os" == "macos" ]; then

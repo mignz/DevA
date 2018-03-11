@@ -74,7 +74,7 @@ else
         newhostname=$(echo -e "$newhostname" | tr -d '[:space:]' | sed 's/[ ;]*$//')
         newhostname=${newhostname:11}
         if [ "$newhostname" != "$vhost" ]; then
-            if [ "$newhostname" == "localhost" ] || [[ "$newhostname" =~ [^a-zA-Z0-9._-] ]] || [[ $newhostname == '' ]] || [[ "$newhostname" == ___* ]] || [[ "$newhostname" != *.localhost ]] || [ -f "$path_etc/nginx/deva/vhosts/$newhostname.conf" ]; then
+            if [ "$newhostname" == "localhost" ] || [[ "$newhostname" =~ [^a-zA-Z0-9._-] ]] || [[ $newhostname == '' ]] || [[ "$newhostname" == ___* ]] || [[ "$newhostname" != *.test ]] || [ -f "$path_etc/nginx/deva/vhosts/$newhostname.conf" ]; then
                 red "Invalid host name! A backup has been restored.\\nPress any key to continue ..."
                 sudo rm -f "$path_etc/nginx/deva/vhosts/$vhost.conf"
                 sudo mv "$path_etc/nginx/deva/vhosts/$vhost.conf.temp" "$path_etc/nginx/deva/vhosts/$vhost.conf"

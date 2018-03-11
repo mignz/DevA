@@ -1,5 +1,17 @@
 # Changelog
 
+## Update 13, 11th of March 2018
+
+* Updated all TLDs from .localhost to .test
+* Restoring older DevA backups will replace TLDs to .test
+* Removed update scripts before release 9
+* Added prompt before starting the installation
+* Fixed issues during PHP installation in macOS
+* Enabled proc_open PHP function required for Composer
+* Enabled allow_url_fopen for Composer
+* Phalcon source directory removed after compilation
+* Fixed PHP not working due to wrong user in FPM config on Linux
+
 ## Update 12, 31st of January 2018
 
 * Fixed issue where older PHP version packages were being installed in Linux
