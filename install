@@ -168,22 +168,21 @@ if [ $os == "macos" ]; then
     
     # 2. Install dependencies
     
-    brew install dialog \
-        pandoc
+    brew install dialog
+    brew install pandoc
     
     # 3. Install PHP/MySQL/Nginx
     
     brew install $phpversion
-    brew install \
-        $phpversion-imagick \
-        $phpversion-phalcon \
-        $phpversion-redis \
-        $phpversion-xdebug \
-        mysql \
-        nginx \
-        composer \
-        node \
-        mongodb
+    brew install $phpversion-imagick
+    brew install $phpversion-phalcon
+    brew install $phpversion-redis
+    brew install $phpversion-xdebug
+    brew install mysql
+    brew install nginx
+    brew install composer
+    brew install node
+    brew install mongodb
     
     # 3. MySQL
     
