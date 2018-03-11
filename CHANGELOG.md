@@ -7,7 +7,7 @@
 * Removed update scripts before release 9
 * Added prompt before starting the installation
 * Fixed issues during PHP installation in macOS
-* Enabled proc_open PHP function required for Composer
+* Enabled proc_open & proc_close PHP function required for Composer
 * Enabled allow_url_fopen for Composer
 * Phalcon source directory removed after compilation
 * Fixed PHP not working due to wrong user in FPM config on Linux

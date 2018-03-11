@@ -38,7 +38,7 @@ profile_newline=0
 function profile {
     path_profile=~/.bash_profile
     [ $os == "linux" ] && path_profile=~/.profile
-    if ! grep -q "$1" $path_profile; then
+    if ! grep -q "$1" $path_profile > /dev/null 2>&1; then
         if [[ -s $path_profile ]] && [ $profile_newline -eq 0 ]; then
             echo "" >> $path_profile
         fi
@@ -173,7 +173,7 @@ if [ $os == "macos" ]; then
     
     # 3. Install PHP/MySQL/Nginx
     
-    brew install $phpversion --with-argon2
+    brew install $phpversion
     brew install \
         $phpversion-imagick \
         $phpversion-phalcon \
@@ -202,7 +202,7 @@ if [ $os == "macos" ]; then
     replace 'upload_max_filesize = 2M' 'upload_max_filesize = 1G' $path_php/php.ini
     replace 'post_max_size = 8M' 'post_max_size = 1G' $path_php/php.ini
     replace ';session.save_path = "/tmp"' 'session.save_path = "/usr/local/var/tmp"' $path_php/php.ini
-    replace 'disable_functions =' 'disable_functions = apache_child_terminate,apache_get_modules,apache_note,apache_setenv,dl,define_syslog_variables,eval,ftp_connect,ini_get_all,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,popen,proc_close,xmlrpc_entity_decode,curl_multi_exec,parse_ini_file,show_source,pcntl_exec,php_uname' $path_php/php.ini
+    replace 'disable_functions =' 'disable_functions = apache_child_terminate,apache_get_modules,apache_note,apache_setenv,dl,define_syslog_variables,eval,ftp_connect,ini_get_all,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,popen,xmlrpc_entity_decode,curl_multi_exec,parse_ini_file,show_source,pcntl_exec,php_uname' $path_php/php.ini
     echo -e "\\n; Xdebug configuration for DevA\\nxdebug.var_display_max_depth = -1\\nxdebug.var_display_max_children = -1\\nxdebug.var_display_max_data = -1" | tee -a $path_php/php.ini
     
     # 5. Nginx
@@ -378,7 +378,7 @@ else
     replace 'upload_max_filesize = 2M' 'upload_max_filesize = 1G' $path_php/php.ini
     replace 'post_max_size = 8M' 'post_max_size = 1G' $path_php/php.ini
     replace ';session.save_path = "/tmp"' 'session.save_path = "/usr/local/var/tmp"' $path_php/php.ini
-    replace 'disable_functions =' 'disable_functions = apache_child_terminate,apache_get_modules,apache_note,apache_setenv,dl,define_syslog_variables,eval,ftp_connect,ini_get_all,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,popen,proc_close,xmlrpc_entity_decode,curl_multi_exec,parse_ini_file,show_source,pcntl_exec,php_uname' $path_php/php.ini
+    replace 'disable_functions =' 'disable_functions = apache_child_terminate,apache_get_modules,apache_note,apache_setenv,dl,define_syslog_variables,eval,ftp_connect,ini_get_all,phpAds_remoteInfo,phpAds_XmlRpc,phpAds_xmlrpcDecode,phpAds_xmlrpcEncode,popen,xmlrpc_entity_decode,curl_multi_exec,parse_ini_file,show_source,pcntl_exec,php_uname' $path_php/php.ini
     echo -e "\\n; Xdebug configuration for DevA\\nxdebug.var_display_max_depth = -1\\nxdebug.var_display_max_children = -1\\nxdebug.var_display_max_data = -1" | sudo tee -a $path_php/php.ini
     sudo service $phpversion-fpm stop
     
