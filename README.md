@@ -1,5 +1,11 @@
 # DevA - Development Area
 
+I've decided to use Docker instead as they now have better integration with macOS with a hypervisor:
+
+**Take a look at [DevA2](https://github.com/mignz/DevA2).**
+
+---
+
 [![Build Status](https://travis-ci.org/mignz/DevA.svg?branch=master)](https://travis-ci.org/mignz/DevA)
 [![Checked with Shellcheck](https://img.shields.io/badge/checked%20with-shellcheck-brightgreen.svg)](https://github.com/koalaman/shellcheck)
 
